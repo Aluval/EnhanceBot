@@ -49,7 +49,7 @@ async def enhance_video(client: Client, message: Message):
     except Exception as e:
         return await message.reply(f"❌ Couldn't get video duration: {e}")
 
-    output_path = "enhanced.mp4"
+    output_path = "enhanced.mkv"
     processing_msg = await message.reply("⚙️ Enhancing video...")
 
     # FFmpeg command with filters for enhancement
@@ -153,8 +153,7 @@ async def compress_video(client: Client, message: Message):
     cmd = [
         "ffmpeg", "-i", input_path,
         "-c:v", "libx265", "-preset", "ultrafast", "-crf", "28",
-        "-c:a", "aac", "-b:a", "128k",
-        "-c:s", "copy", "-map", "0",
+        "-c:a", "aac", "-c:s", "copy", "-map", "0",
         output_path
     ]
 
