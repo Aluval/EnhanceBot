@@ -1,12 +1,11 @@
 import os
 import re
 import subprocess
-import math
 from time import time
 from pyrogram import Client, filters
 from pyrogram.enums import ChatAction
 from pyrogram.types import Message
-from utils import progress, humanbytes, TimeFormatter
+from utils import progress, humanbytes, time_formatter
 
 API_ID = int(os.getenv("API_ID", "10811400"))
 API_HASH = os.getenv("API_HASH", "191bf5ae7a6c39771e7b13cf4ffd1279")
@@ -14,51 +13,46 @@ BOT_TOKEN = os.getenv("BOT_TOKEN", "7097361755:AAHJcqT4_YBvSq5hG7FwP5kDhugFBTwfR
 LOG_CHANNEL = int(os.getenv("LOG_CHANNEL", "-1002067650699"))
 
 app = Client("enhance_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
-MAX_FILE_SIZE = 300 * 1024 * 1024  # 300MB limit
-
+MAX_FILE_SIZE = 300 * 1024 * 1024
 
 @app.on_message(filters.command("enhance") & filters.private)
 async def enhance_command(client: Client, message: Message):
+    # Check if reply to a video or document exists
     if not message.reply_to_message or not (message.reply_to_message.video or message.reply_to_message.document):
         return await message.reply("❌ Please reply to a video or document with /enhance.")
 
     video_msg = message.reply_to_message
     file_size = video_msg.video.file_size if video_msg.video else video_msg.document.file_size
-
     if file_size > MAX_FILE_SIZE:
         return await message.reply("❌ File is larger than 300MB. Please send a smaller video.")
 
     filename = video_msg.document.file_name if video_msg.document else video_msg.video.file_name
 
-    # Parse '-n' argument for output filename
+    # Parse optional output filename after -n flag
     args = message.text.split()
     if "-n" in args:
         i = args.index("-n")
         if i + 1 < len(args):
             output_filename = args[i + 1]
-            # Add extension if not present (use mp4 as default)
-            if not os.path.splitext(output_filename)[1]:
-                output_filename += ".mp4"
         else:
-            return await message.reply("❌ You used `-n` but didn't provide a filename.")
+            return await message.reply("❌ You used -n but didn't provide a filename.")
     else:
         output_filename = "enhanced.mp4"
 
-    user_name = message.from_user.first_name or "Unknown"
-    await client.send_message(LOG_CHANNEL, f"⚙️ Enhancement initiated by {user_name}\nFile: `{filename}`")
+    user_name = message.from_user.first_name
+    await client.send_message(LOG_CHANNEL, f"⚙️ Enhancement initiated by {user_name}\nFile: {filename}")
 
-    start_time = time()
-    downloading_msg = await message.reply("⬇️ Downloading video...")
+    start = time()
+    downloading = await message.reply("⬇️ Downloading video...")
 
     input_path = await video_msg.download(
         progress=progress,
-        progress_args=(downloading_msg, file_size, downloading_msg, start_time)
+        progress_args=(downloading, file_size, downloading, start)
     )
 
     if not os.path.exists(input_path) or os.path.getsize(input_path) == 0:
         return await message.reply("❌ Download failed or file is empty.")
 
-    # Get video duration using ffprobe
     try:
         total_duration = float(subprocess.check_output([
             "ffprobe", "-v", "error", "-show_entries", "format=duration",
@@ -69,35 +63,28 @@ async def enhance_command(client: Client, message: Message):
 
     processing_msg = await message.reply("⚙️ Enhancing video...")
 
-    # FFmpeg command with filters
     cmd = [
         "ffmpeg", "-i", input_path,
         "-vf", "scale=1920:1080:flags=lanczos,hqdn3d,unsharp=5:5:1.0:5:5:0.0,eq=contrast=1.2:brightness=0.05:saturation=1.2",
         "-map", "0", "-c:v", "libx264", "-preset", "ultrafast", "-crf", "28",
-        "-c:a", "copy", "-c:s", "mov_text", output_filename,
-        "-y"
+        "-c:a", "copy", "-c:s", "mov_text", output_filename
     ]
 
     process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
-
     time_pattern = re.compile(r'time=(\d+):(\d+):(\d+).(\d+)')
+    start_time = time()
     last_percent = -1
-    start_ffmpeg_time = time()
 
     while True:
         line = process.stdout.readline()
-        if line == '' and process.poll() is not None:
+        if line == "" and process.poll() is not None:
             break
         match = time_pattern.search(line)
         if match:
             h, m, s, ms = map(int, match.groups())
             current_seconds = h * 3600 + m * 60 + s + ms / 100
             percent = int((current_seconds / total_duration) * 100)
-            elapsed = time() - start_ffmpeg_time
-            speed = current_seconds / max(elapsed, 1e-9)
-            eta_seconds = (total_duration - current_seconds) / max(speed, 1e-9)
-            eta = TimeFormatter(int(eta_seconds))
-
+            eta = time_formatter((total_duration - current_seconds) / max(1e-9, (current_seconds / max(1, (time() - start_time)))))
             if percent != last_percent:
                 try:
                     await processing_msg.edit_text(
@@ -107,10 +94,10 @@ async def enhance_command(client: Client, message: Message):
                     pass
                 last_percent = percent
 
-    # Check if ffmpeg succeeded
-    if process.returncode != 0 or not os.path.exists(output_filename) or os.path.getsize(output_filename) == 0:
+    # Check if ffmpeg process ended successfully and output file is valid
+    if process.poll() != 0 or not os.path.exists(output_filename) or os.path.getsize(output_filename) == 0:
         os.remove(input_path)
-        return await message.reply("❌ FFmpeg failed or output file is empty.")
+        return await message.reply("❌ FFmpeg failed or file is empty.")
 
     await processing_msg.edit_text("⬆️ Uploading enhanced video...")
     await client.send_chat_action(message.chat.id, ChatAction.UPLOAD_VIDEO)
@@ -136,17 +123,13 @@ async def enhance_command(client: Client, message: Message):
     except Exception as e:
         await message.reply(f"❌ Upload failed: {e}")
 
-    await client.send_message(LOG_CHANNEL, f"✅ Enhancement completed for {user_name}\nFile: `{output_filename}`")
+    await client.send_message(LOG_CHANNEL, f"✅ Enhancement completed for {user_name}\nFile: {output_filename}")
 
-    # Cleanup files
-    try:
-        if os.path.exists(input_path):
-            os.remove(input_path)
-        if os.path.exists(output_filename):
-            os.remove(output_filename)
-    except Exception as e:
-        print(f"Cleanup error: {e}")
-
+    # Clean up
+    if os.path.exists(input_path):
+        os.remove(input_path)
+    if os.path.exists(output_filename):
+        os.remove(output_filename)
 
 if __name__ == "__main__":
     app.run()
