@@ -32,20 +32,21 @@ def time_formatter(seconds):
     h, m = divmod(m, 60)
     return f"{h:02}:{m:02}:{s:02}"
 
-# Progress function to update message during upload/download
-async def progress(current, total, message: Message, start):
+async def progress(current, total, message: Message, *args):
+    start = args[0] if args else time()
     now = time()
     diff = now - start
     if diff == 0:
-        diff = 0.1  # prevent division by zero
+        diff = 0.1
+
     percentage = current * 100 / total
     speed = current / diff
     eta = (total - current) / speed if speed != 0 else 0
+
     bar_length = 10
     filled_length = int(bar_length * current // total)
     bar = "█" * filled_length + "░" * (bar_length - filled_length)
 
-    # Update every ~5 seconds (rounded)
     if round(diff) % 5 == 0 or current == total:
         try:
             await message.edit_text(
@@ -55,7 +56,7 @@ async def progress(current, total, message: Message, start):
                 f"ETA: {time_formatter(eta)}"
             )
         except Exception:
-            pass  # Avoid crashing on edit errors (rate limit, deleted msg)
+            pass
 
 @app.on_message(filters.command("enhance") & filters.reply)
 async def enhance_video(client: Client, message: Message):
