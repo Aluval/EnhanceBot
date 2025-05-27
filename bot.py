@@ -13,6 +13,8 @@ BOT_TOKEN = os.getenv("BOT_TOKEN", "7097361755:AAHJcqT4_YBvSq5hG7FwP5kDhugFBTwfR
 app = Client("enhance_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
 
+
+
 MAX_FILE_SIZE = 300 * 1024 * 1024  # 300MB
 
 @app.on_message(filters.command("enhance") & filters.reply)
@@ -45,16 +47,16 @@ async def enhance_video(client: Client, message: Message):
         await message.reply(f"⚠️ Failed to get video duration: {e}")
 
     output_path = "enhanced.mp4"
-    processing_msg = await message.reply("⚙️ Enhancing video...")
+    processing_msg = await message.reply("⚡ Ultra-fast enhancing video...")
 
+    # Fastest FFmpeg settings
     cmd = [
         "ffmpeg", "-i", input_path,
-        "-vf", "scale=1920:1080:flags=lanczos,hqdn3d,unsharp=5:5:1.0:5:5:0.0,"
-               "eq=contrast=1.2:brightness=0.05:saturation=1.2",
+        "-vf", "eq=contrast=1.1:saturation=1.1",  # light filter only
         "-map", "0",
-        "-c:v", "libx264", "-preset", "faster", "-crf", "28",
+        "-c:v", "libx264", "-preset", "ultrafast", "-crf", "30",
         "-c:a", "copy",
-        "-c:s", "mov_text",  # safer subtitle codec
+        "-c:s", "mov_text",
         output_path
     ]
 
@@ -65,16 +67,14 @@ async def enhance_video(client: Client, message: Message):
         if line == "" and process.poll() is not None:
             break
         if "time=" in line:
-            await processing_msg.edit_text(f"⚙️ Enhancing video...\n`{line.strip()}`")
+            await processing_msg.edit_text(f"⚡ Ultra-fast enhancing...\n`{line.strip()}`")
 
-    # FFmpeg exit check
     retcode = process.poll()
     if retcode != 0:
         await message.reply(f"❌ FFmpeg failed with code {retcode}.")
         os.remove(input_path)
         return
 
-    # Validate output file
     if not os.path.exists(output_path) or os.path.getsize(output_path) == 0:
         await message.reply("❌ Enhanced file is empty or missing.")
         os.remove(input_path)
@@ -85,13 +85,13 @@ async def enhance_video(client: Client, message: Message):
 
     await message.reply_video(
         video=output_path,
-        caption="✅ Enhanced Video (1080p) with original audio and subtitles",
+        caption="✅ Enhanced Video (ultrafast mode)",
         progress=progress,
         progress_args=(message, time())
     )
 
     os.remove(input_path)
-    os.remove(output_path)    
+    os.remove(output_path)
 
 if __name__ == "__main__":
     app.run()
