@@ -1,50 +1,46 @@
-import math
 from time import time
-from pyrogram.types import Message
 
-def humanbytes(size):
-    if not size:
-        return "0 B"
-    power = 2**10
+def humanbytes(size: int) -> str:
+    """Convert bytes to human-readable format."""
+    if size < 0:
+        return "0B"
+    power = 2 ** 10
     n = 0
-    Dic_powerN = {0: 'B', 1: 'KB', 2: 'MB', 3: 'GB', 4: 'TB'}
-    while size > power:
+    units = ["B", "KB", "MB", "GB", "TB"]
+    while size > power and n < len(units) - 1:
         size /= power
         n += 1
-    return f"{round(size, 2)} {Dic_powerN[n]}"
+    return f"{size:.2f} {units[n]}"
 
-def time_formatter(seconds):
+def time_formatter(seconds: int) -> str:
+    """Format seconds to hh:mm:ss string."""
     seconds = int(seconds)
-    days, seconds = divmod(seconds, 86400)
-    hours, seconds = divmod(seconds, 3600)
-    minutes, seconds = divmod(seconds, 60)
-    time_str = ""
-    if days > 0:
-        time_str += f"{days}d "
-    if hours > 0:
-        time_str += f"{hours}h "
-    if minutes > 0:
-        time_str += f"{minutes}m "
-    if seconds > 0:
-        time_str += f"{seconds}s"
-    return time_str.strip()
+    m, s = divmod(seconds, 60)
+    h, m = divmod(m, 60)
+    if h > 0:
+        return f"{h:02d}:{m:02d}:{s:02d}"
+    else:
+        return f"{m:02d}:{s:02d}"
 
-async def progress(current, total, message: Message, start, *args):
+async def progress(current, total, message, start, *args):
     now = time()
     diff = now - start
+    if diff == 0:
+        diff = 0.1  # Avoid division by zero
 
-    if round(diff % 5) == 0 or current == total:
-        percentage = current * 100 / total
-        speed = current / diff if diff else 0
-        eta = (total - current) / speed if speed else 0
-        bar = "[" + "█" * int(percentage / 10) + "░" * (10 - int(percentage / 10)) + "]"
+    percentage = current * 100 / total
+    speed = current / diff
+    eta = (total - current) / speed if speed > 0 else 0
+    bar_length = 10
+    filled_length = int(bar_length * percentage // 100)
+    bar = "█" * filled_length + "░" * (bar_length - filled_length)
 
-        try:
-            await message.edit_text(
-                f"{bar} {percentage:.2f}%\n"
-                f"{humanbytes(current)} of {humanbytes(total)}\n"
-                f"Speed: {humanbytes(speed)}/s\n"
-                f"ETA: {time_formatter(eta)}"
-            )
-        except:
-            pass  # In case of rate limit or edit errors
+    try:
+        await message.edit_text(
+            f"{bar} {percentage:.2f}%\n"
+            f"{humanbytes(current)} of {humanbytes(total)}\n"
+            f"Speed: {humanbytes(speed)}/s\n"
+            f"ETA: {time_formatter(eta)}"
+        )
+    except:
+        pass  # Ignore errors like FloodWait or message deleted
