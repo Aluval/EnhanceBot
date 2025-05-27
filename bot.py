@@ -61,7 +61,7 @@ async def enhance_video(client: Client, message: Message):
         "-map", "0",
         "-c:v", "libx264", "-preset", "ultrafast", "-crf", "28",
         "-c:a", "copy",
-        "-c:s", "mov_text",
+        "-c:s", "copy",
         output_path
     ]
 
