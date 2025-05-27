@@ -5,6 +5,7 @@ import os
 import subprocess
 import re
 import time
+from utils import progress, humanbytes, time_formatter
 
 API_ID = int(os.getenv("API_ID", "10811400"))     # Replace with your API_ID
 API_HASH = os.getenv("API_HASH", "191bf5ae7a6c39771e7b13cf4ffd1279")  # Replace with your API_HASH
@@ -14,43 +15,6 @@ app = Client("enhance_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKE
 
 MAX_FILE_SIZE = 300 * 1024 * 1024  # 300MB
 
-# Utility: Format seconds to HH:MM:SS string
-def time_formatter(seconds: float) -> str:
-    seconds = int(seconds)
-    h = seconds // 3600
-    m = (seconds % 3600) // 60
-    s = seconds % 60
-    return f"{h:02d}:{m:02d}:{s:02d}"
-
-# Utility: Human-readable bytes (optional, if used in progress)
-def humanbytes(size):
-    # Simple function to convert bytes to KB/MB/GB strings
-    power = 2**10
-    n = 0
-    power_labels = {0: '', 1: 'KB', 2: 'MB', 3: 'GB', 4: 'TB'}
-    while size > power:
-        size /= power
-        n += 1
-    return f"{size:.2f} {power_labels[n]}"
-
-# Progress callback for downloads/uploads (optional, from your utils)
-async def progress(current, total, message: Message, start, *args):
-    now = time.time()
-    diff = now - start
-    if round(diff % 5) == 0 or current == total:
-        percentage = current * 100 / total
-        speed = current / diff if diff else 0
-        eta = (total - current) / speed if speed else 0
-        bar = "[" + "█" * int(percentage / 10) + "░" * (10 - int(percentage / 10)) + "]"
-        try:
-            await message.edit_text(
-                f"{bar} {percentage:.2f}%\n"
-                f"{humanbytes(current)} of {humanbytes(total)}\n"
-                f"Speed: {humanbytes(speed)}/s\n"
-                f"ETA: {time_formatter(eta)}"
-            )
-        except:
-            pass  # ignore edit failures due to Telegram rate limits
 
 @app.on_message(filters.command("enhance") & filters.reply)
 async def enhance_video(client: Client, message: Message):
@@ -137,11 +101,11 @@ async def enhance_video(client: Client, message: Message):
         return
 
     upload_msg = await message.reply("⬆️ Uploading enhanced video...")
-    await client.send_chat_action(message.chat.id, ChatAction.UPLOAD_VIDEO)
+    await client.send_chat_action(message.chat.id, ChatAction.UPLOAD_DOCUMENT)
 
-    await message.reply_video(
-        video=output_path,
-        caption="✅ Enhanced Video (1080p) with original audio and subtitles",
+    await message.reply_document(
+        document=output_path,
+        caption="✅ Enhanced Video (1080p)",
         progress=progress,
         progress_args=(upload_msg, os.path.getsize(output_path), upload_msg, time.time())
     )
@@ -151,6 +115,56 @@ async def enhance_video(client: Client, message: Message):
     # Cleanup
     os.remove(input_path)
     os.remove(output_path)
+
+@app.on_message(filters.command("compress") & filters.reply)
+async def compress_video(client: Client, message: Message):
+    if not message.reply_to_message or not message.reply_to_message.video:
+        return await message.reply("❌ Please reply to a video file with /compress.")
+
+    video_msg = message.reply_to_message
+    file_size = video_msg.video.file_size
+
+    if file_size > MAX_FILE_SIZE:
+        return await message.reply("❌ File is larger than 300MB. Please send a smaller video.")
+
+    start = time.time()
+    downloading = await message.reply("⬇️ Downloading video...")
+    dl = await video_msg.download(
+        progress=progress,
+        progress_args=(downloading, file_size, downloading, start)
+    )
+    await downloading.delete()
+
+    if not os.path.exists(dl) or os.path.getsize(dl) == 0:
+        return await message.reply("❌ Download failed or file is empty.")
+
+    compressed_path = "compressed.mp4"
+    compressing_msg = await message.reply("⚙️ Compressing video...")
+
+    cmd = f'ffmpeg -i "{dl}" -preset ultrafast -c:v libx265 -crf 27 -map 0:v -c:a aac -map 0:a -c:s copy -map 0:s? "{compressed_path}"'
+    process = await asyncio.create_subprocess_shell(cmd)
+    await process.communicate()
+
+    await compressing_msg.delete()
+
+    if not os.path.exists(compressed_path) or os.path.getsize(compressed_path) == 0:
+        os.remove(dl)
+        return await message.reply("❌ Compression failed or output is empty.")
+
+    uploading = await message.reply("⬆️ Uploading compressed video...")
+    await client.send_chat_action(message.chat.id, ChatAction.UPLOAD_DOCUMENT)
+
+    await message.reply_document(
+        document=compressed_path,
+        caption="✅ Compressed Video (H.265/HEVC)",
+        progress=progress,
+        progress_args=(uploading, os.path.getsize(compressed_path), uploading, time.time())
+    )
+    await uploading.delete()
+
+    # Cleanup
+    os.remove(dl)
+    os.remove(compressed_path)
 
 if __name__ == "__main__":
     app.run()
