@@ -116,7 +116,9 @@ async def enhance_video(client: Client, message: Message):
     os.remove(input_path)
     os.remove(output_path)
 
-@app.on_message(filters.command("compress") & filters.reply)
+
+
+@Client.on_message(filters.command("compress") & filters.reply)
 async def compress_video(client: Client, message: Message):
     if not message.reply_to_message or not message.reply_to_message.video:
         return await message.reply("❌ Please reply to a video file with /compress.")
@@ -124,8 +126,8 @@ async def compress_video(client: Client, message: Message):
     video_msg = message.reply_to_message
     file_size = video_msg.video.file_size
 
-    if file_size > 1024 * 1024 * 1024:  # 1GB limit
-        return await message.reply("❌ File is larger than 1GB. Please send a smaller video.")
+    if file_size > 2 * 1024 * 1024 * 1024:
+        return await message.reply("❌ File is larger than 2GB. Please send a smaller video.")
 
     start = time.time()
     downloading = await message.reply("⬇️ Downloading video...")
@@ -147,13 +149,13 @@ async def compress_video(client: Client, message: Message):
     except Exception as e:
         return await message.reply(f"❌ Couldn't get video duration: {e}")
 
-    output_path = "compressed.mp4"
+    output_path = "compressed.mkv"
     processing_msg = await message.reply("📉 Compressing video...")
 
     cmd = [
         "ffmpeg", "-i", input_path,
         "-c:v", "libx265", "-preset", "ultrafast", "-crf", "28",
-        "-c:a", "copy", "-c:s", "copy", "-map", "0",
+        "-c:a", "aac", "-b:a", "128k",
         output_path
     ]
 
@@ -175,14 +177,20 @@ async def compress_video(client: Client, message: Message):
                 elapsed = time.time() - start_time
                 eta = elapsed * (100 - percent) / percent if percent else 0
                 eta_formatted = time_formatter(eta)
-                await processing_msg.edit_text(f"📉 Compressing video: {percent}%\nETA: {eta_formatted}")
+                try:
+                    await processing_msg.edit_text(f"📉 Compressing video: {percent}%\nETA: {eta_formatted}")
+                except:
+                    pass
                 last_percent = percent
+
+    stdout, _ = process.communicate()
+    print("FFmpeg output:", stdout)  # For debugging in console
 
     await processing_msg.delete()
 
     if process.poll() != 0 or not os.path.exists(output_path) or os.path.getsize(output_path) == 0:
         os.remove(input_path)
-        return await message.reply("❌ Compression failed.")
+        return await message.reply("❌ Compression failed. See console for details.")
 
     upload_msg = await message.reply("⬆️ Uploading compressed video...")
     await client.send_chat_action(message.chat.id, ChatAction.UPLOAD_DOCUMENT)
@@ -197,40 +205,6 @@ async def compress_video(client: Client, message: Message):
 
     os.remove(input_path)
     os.remove(output_path)
-
-
-
-@Client.on_message(filters.command("convert") & filters.reply)
-async def video_to_document(client: Client, message: Message):
-    if not message.reply_to_message or not message.reply_to_message.video:
-        return await message.reply("❌ Please reply to a video with /convert command.")
-
-    video_msg = message.reply_to_message
-    file_size = video_msg.video.file_size
-
-    if file_size > 2 * 1024 * 1024 * 1024:
-        return await message.reply("❌ File is larger than 300MB. Please send a smaller video.")
-
-    start = time.time()
-    status_message = await message.reply("⬇️ Downloading video...")
-
-    input_path = await video_msg.download(
-        progress=lambda cur, tot: client.loop.create_task(progress(cur, tot, status_message, start, "Downloading"))
-    )
-
-    await status_message.edit_text("⬆️ Uploading as document...")
-
-    start_upload = time.time()
-    await client.send_document(
-        chat_id=message.chat.id,
-        document=input_path,
-        caption="Here is your video as a document",
-        progress=lambda cur, tot: client.loop.create_task(progress(cur, tot, status_message, start_upload, "Uploading"))
-    )
-
-    await status_message.delete()
-    os.remove(input_path)
-
 
 if __name__ == "__main__":
     app.run()
