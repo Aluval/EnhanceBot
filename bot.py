@@ -5,12 +5,11 @@ import os
 import subprocess
 from time import time
 import re
-from utils import progress, humanbytes, time_formatter
+from utils import progress, humanbytes, Time_formatter
 
-API_ID = int(os.getenv("API_ID", "12345"))
-API_HASH = os.getenv("API_HASH", "your_api_hash")
-BOT_TOKEN = os.getenv("BOT_TOKEN", "your_bot_token")
-
+API_ID = int(os.getenv("API_ID", "10811400"))     # Replace with your API_ID
+API_HASH = os.getenv("API_HASH", "191bf5ae7a6c39771e7b13cf4ffd1279")  # Replace with your API_HASH
+BOT_TOKEN = os.getenv("BOT_TOKEN", "7097361755:AAHJcqT4_YBvSq5hG7FwP5kDhugFBTwfRQE")  # Replace with your Bot Token
 app = Client("enhance_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
 MAX_FILE_SIZE = 300 * 1024 * 1024  # 300MB
