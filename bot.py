@@ -20,7 +20,8 @@ from time import time
 from pyrogram import Client, filters 
 from pyrogram.types import Message 
 
-JOBS_DIR = "jobs" os.makedirs(JOBS_DIR, exist_ok=True)
+JOBS_DIR = "jobs" 
+os.makedirs(JOBS_DIR, exist_ok=True)
 
 
 def save_job(job_id, data): 
