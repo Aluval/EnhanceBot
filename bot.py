@@ -69,6 +69,8 @@ async def enhance_video(client: Client, message: Message):
         progress=progress,
         progress_args=(downloading, video_msg.video.file_size, downloading, start)
     )
+    # Delete the download progress message after download finishes
+    await downloading.delete()
 
     if not os.path.exists(input_path) or os.path.getsize(input_path) == 0:
         return await message.reply("❌ Download failed or file is empty.")
@@ -120,6 +122,9 @@ async def enhance_video(client: Client, message: Message):
                 await processing_msg.edit_text(f"⚡ Enhancing video: {percent}%\nETA: {eta_formatted}")
                 last_percent = percent
 
+    # Delete enhancement progress message after finishing
+    await processing_msg.delete()
+
     retcode = process.poll()
     if retcode != 0:
         await message.reply(f"❌ FFmpeg failed with code {retcode}.")
@@ -131,20 +136,21 @@ async def enhance_video(client: Client, message: Message):
         os.remove(input_path)
         return
 
-    await message.reply("⬆️ Uploading enhanced video...")
+    upload_msg = await message.reply("⬆️ Uploading enhanced video...")
     await client.send_chat_action(message.chat.id, ChatAction.UPLOAD_VIDEO)
 
     await message.reply_video(
         video=output_path,
         caption="✅ Enhanced Video (1080p) with original audio and subtitles",
         progress=progress,
-        progress_args=(message, os.path.getsize(output_path), message, time.time())
+        progress_args=(upload_msg, os.path.getsize(output_path), upload_msg, time.time())
     )
+    # Delete upload progress message after upload finishes
+    await upload_msg.delete()
 
     # Cleanup
     os.remove(input_path)
     os.remove(output_path)
-
 
 if __name__ == "__main__":
     app.run()
