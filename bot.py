@@ -86,7 +86,7 @@ async def enhance_video(client: Client, message: Message):
                 current_time = format_time(current_sec)
                 total_time = format_time(total_duration)
                 await processing_msg.edit_text(
-                    f"MULTI ARM 24 BOT:\n⚡ Enhancing video: {percent}% ({current_time} / {total_time})"
+                    f"⚡ Enhancing video: {percent}% ({current_time} / {total_time})"
                 )
                 last_percent = percent
 
