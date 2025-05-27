@@ -101,10 +101,10 @@ async def enhance_video(client: Client, message: Message):
         return
 
     upload_msg = await message.reply("⬆️ Uploading enhanced video...")
-    await client.send_chat_action(message.chat.id, ChatAction.UPLOAD_DOCUMENT)
+    await client.send_chat_action(message.chat.id, ChatAction.UPLOAD_VIDEO)
 
-    await message.reply_document(
-        document=output_path,
+    await message.reply_video(
+        video=output_path,
         caption="✅ Enhanced Video (1080p)",
         progress=progress,
         progress_args=(upload_msg, os.path.getsize(output_path), upload_msg, time.time())
@@ -152,10 +152,10 @@ async def compress_video(client: Client, message: Message):
         return await message.reply("❌ Compression failed or output is empty.")
 
     uploading = await message.reply("⬆️ Uploading compressed video...")
-    await client.send_chat_action(message.chat.id, ChatAction.UPLOAD_DOCUMENT)
+    await client.send_chat_action(message.chat.id, ChatAction.UPLOAD_VIDEO)
 
-    await message.reply_document(
-        document=compressed_path,
+    await message.reply_video(
+        video=compressed_path,
         caption="✅ Compressed Video (H.265/HEVC)",
         progress=progress,
         progress_args=(uploading, os.path.getsize(compressed_path), uploading, time.time())
