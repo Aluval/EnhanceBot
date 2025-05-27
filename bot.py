@@ -148,14 +148,13 @@ async def compress_video(client: Client, message: Message):
         return await message.reply(f"❌ Couldn't get video duration: {e}")
 
     output_path = "compressed.mp4"
-    processing_msg = await message.reply("⚙️ Compressing video...")
+    processing_msg = await message.reply("📉 Compressing video...")
 
-    # FFmpeg command for compression
     cmd = [
         "ffmpeg", "-i", input_path,
-        "-preset", "ultrafast",
-        "-c:v", "libx265", "-crf", "27",
-        "-map", "0:v", "-c:a", "aac", "-map", "0:a", "-c:s", "copy", "-map", "0:s?",
+        "-c:v", "libx265", "-preset", "ultrafast", "-crf", "28",
+        "-c:a", "aac", "-b:a", "128k",
+        "-c:s", "copy", "-map", "0",
         output_path
     ]
 
@@ -182,16 +181,9 @@ async def compress_video(client: Client, message: Message):
 
     await processing_msg.delete()
 
-    retcode = process.poll()
-    if retcode != 0:
-        await message.reply(f"❌ FFmpeg failed with code {retcode}.")
+    if process.poll() != 0 or not os.path.exists(output_path) or os.path.getsize(output_path) == 0:
         os.remove(input_path)
-        return
-
-    if not os.path.exists(output_path) or os.path.getsize(output_path) == 0:
-        await message.reply("❌ Compressed file is empty or missing.")
-        os.remove(input_path)
-        return
+        return await message.reply("❌ Compression failed.")
 
     upload_msg = await message.reply("⬆️ Uploading compressed video...")
     await client.send_chat_action(message.chat.id, ChatAction.UPLOAD_DOCUMENT)
