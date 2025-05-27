@@ -12,7 +12,7 @@ BOT_TOKEN = os.getenv("BOT_TOKEN", "7097361755:AAE_zegGSo1OsWQWsy7G8eit4pDXFxOj7
 
 app = Client("enhance_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
-
+MAX_FILE_SIZE = 300 * 1024 * 1024  # 300 MB in bytes
 
 @app.on_message(filters.command("enhance") & filters.reply)
 async def enhance_video(client: Client, message: Message):
@@ -20,8 +20,12 @@ async def enhance_video(client: Client, message: Message):
         return await message.reply("Please reply to a video file with /enhance command.")
 
     video_msg = message.reply_to_message
-    start = time()
+    file_size = video_msg.video.file_size
 
+    if file_size > MAX_FILE_SIZE:
+        return await message.reply("File is larger than 300MB. Please send a smaller video.")
+
+    start = time()
     downloading = await message.reply("Downloading video...")
     input_path = await video_msg.download(
         progress=progress,
@@ -42,19 +46,18 @@ async def enhance_video(client: Client, message: Message):
     output_path = "enhanced.mp4"
     processing_msg = await message.reply("Enhancing video...")
 
-    # FFmpeg enhancement command with all audio/subtitle streams preserved
     cmd = [
         "ffmpeg", "-i", input_path,
         "-vf", "scale=1920:1080:flags=lanczos,hqdn3d,unsharp=5:5:1.0:5:5:0.0,eq=contrast=1.2:brightness=0.05:saturation=1.2",
-        "-map", "0",  # maps all streams (audio, subtitles, etc.)
+        "-map", "0",
         "-c:v", "libx264", "-preset", "faster", "-crf", "28",
-        "-c:a", "copy", "-c:s", "copy",  # copy original audio and subtitles
+        "-c:a", "copy", "-c:s", "copy",
         output_path
     ]
 
     process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
 
-    # Progress bar during processing
+    # Progress update from ffmpeg output
     while True:
         line = process.stdout.readline()
         if line == "" and process.poll() is not None:
