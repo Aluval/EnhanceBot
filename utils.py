@@ -1,4 +1,4 @@
-
+from time import time
 import math
 from pyrogram.types import Message
 
