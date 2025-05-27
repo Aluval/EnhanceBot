@@ -36,31 +36,38 @@ def load_jobs():
                jobs.append(json.load(f)) 
         return jobs
 
-@app.on_message(filters.command("enhance") & filters.reply) 
-async def enhance_video(client: Client, message: Message): 
-    if not message.reply_to_message or not message.reply_to_message.video: 
+@app.on_message(filters.command("enhance") & filters.reply)
+async def enhance_video(client: Client, message: Message):
+    if not message.reply_to_message or not message.reply_to_message.video:
         return await message.reply("Please reply to a video file with /enhance command.")
 
-video_msg = message.reply_to_message
-start_time = time()
-downloading = await message.reply("Downloading video...")
+    video_msg = message.reply_to_message
+    start_time = time()
+    downloading = await message.reply("Downloading video...")
 
-input_path = await video_msg.download(progress=progress, progress_args=(downloading, start_time))
-if not os.path.getsize(input_path):
-    return await message.reply("Downloaded file is empty. Please try again.")
+    try:
+        input_path = await video_msg.download(
+            progress=progress,
+            progress_args=(downloading, start_time)
+        )
+    except Exception as e:
+        return await message.reply(f"Failed to download video: {e}")
 
-# Generate unique job ID and save job metadata
-job_id = str(uuid.uuid4())
-job_data = {
-    "job_id": job_id,
-    "user_id": message.from_user.id,
-    "chat_id": message.chat.id,
-    "input_path": input_path,
-    "status": "downloaded"
-}
-save_job(job_id, job_data)
+    if not os.path.exists(input_path) or os.path.getsize(input_path) == 0:
+        return await message.reply("Downloaded file is empty or missing. Please try again.")
 
-await process_enhancement(client, job_data)
+    # Generate unique job ID and save job metadata
+    job_id = str(uuid.uuid4())
+    job_data = {
+        "job_id": job_id,
+        "user_id": message.from_user.id,
+        "chat_id": message.chat.id,
+        "input_path": input_path,
+        "status": "downloaded"
+    }
+
+    save_job(job_id, job_data)
+    await process_enhancement(client, job_data)
 
 async def process_enhancement(client: Client, job):
     input_path = job["input_path"]
