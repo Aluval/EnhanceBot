@@ -41,6 +41,7 @@ async def enhance_command(client: Client, message: Message):
 
     start = time()
     downloading = await message.reply("⬇️ Downloading video...")
+
     input_path = await video_msg.download(
         progress=progress,
         progress_args=(downloading, file_size, downloading, start)
