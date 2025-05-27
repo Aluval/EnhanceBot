@@ -1,56 +1,22 @@
-from pyrogram import Client, filters
-from pyrogram.types import Message
-from pyrogram.enums import ChatAction
 import os
-import subprocess
 import re
-import time
+import subprocess
+from time import time
 
-API_ID = int(os.getenv("API_ID", "10811400"))     # Replace with your API_ID
-API_HASH = os.getenv("API_HASH", "191bf5ae7a6c39771e7b13cf4ffd1279")  # Replace with your API_HASH
-BOT_TOKEN = os.getenv("BOT_TOKEN", "7097361755:AAHJcqT4_YBvSq5hG7FwP5kDhugFBTwfRQE")  # Replace with your Bot Token
+from pyrogram import Client, filters
+from pyrogram.enums import ChatAction
+from pyrogram.types import Message
+
+from utils import progress, humanbytes, time_formatter
+
+API_ID = int(os.getenv("API_ID", "10811400"))
+API_HASH = os.getenv("API_HASH", "191bf5ae7a6c39771e7b13cf4ffd1279")
+BOT_TOKEN = os.getenv("BOT_TOKEN", "7097361755:AAHJcqT4_YBvSq5hG7FwP5kDhugFBTwfRQE")
 
 app = Client("enhance_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
 MAX_FILE_SIZE = 300 * 1024 * 1024  # 300MB
 
-# Utility: Format seconds to HH:MM:SS string
-def time_formatter(seconds: float) -> str:
-    seconds = int(seconds)
-    h = seconds // 3600
-    m = (seconds % 3600) // 60
-    s = seconds % 60
-    return f"{h:02d}:{m:02d}:{s:02d}"
-
-# Utility: Human-readable bytes (optional, if used in progress)
-def humanbytes(size):
-    # Simple function to convert bytes to KB/MB/GB strings
-    power = 2**10
-    n = 0
-    power_labels = {0: '', 1: 'KB', 2: 'MB', 3: 'GB', 4: 'TB'}
-    while size > power:
-        size /= power
-        n += 1
-    return f"{size:.2f} {power_labels[n]}"
-
-# Progress callback for downloads/uploads (optional, from your utils)
-async def progress(current, total, message: Message, start, *args):
-    now = time.time()
-    diff = now - start
-    if round(diff % 5) == 0 or current == total:
-        percentage = current * 100 / total
-        speed = current / diff if diff else 0
-        eta = (total - current) / speed if speed else 0
-        bar = "[" + "█" * int(percentage / 10) + "░" * (10 - int(percentage / 10)) + "]"
-        try:
-            await message.edit_text(
-                f"{bar} {percentage:.2f}%\n"
-                f"{humanbytes(current)} of {humanbytes(total)}\n"
-                f"Speed: {humanbytes(speed)}/s\n"
-                f"ETA: {time_formatter(eta)}"
-            )
-        except:
-            pass  # ignore edit failures due to Telegram rate limits
 
 @app.on_message(filters.command("enhance") & filters.reply)
 async def enhance_video(client: Client, message: Message):
@@ -63,17 +29,17 @@ async def enhance_video(client: Client, message: Message):
     if file_size > MAX_FILE_SIZE:
         return await message.reply("❌ File is larger than 300MB. Please send a smaller video.")
 
-    start = time.time()
-    downloading = await message.reply("⬇️ Downloading video...")
+    start = time()
+    downloading_msg = await message.reply("⬇️ Downloading video...")
     input_path = await video_msg.download(
         progress=progress,
-        progress_args=(downloading, video_msg.video.file_size, downloading, start)
+        progress_args=(downloading_msg, video_msg.video.file_size, downloading_msg, start)
     )
 
     if not os.path.exists(input_path) or os.path.getsize(input_path) == 0:
         return await message.reply("❌ Download failed or file is empty.")
 
-    # Get video duration with ffprobe
+    # Get duration for ffmpeg progress estimate
     try:
         duration_cmd = [
             "ffprobe", "-v", "error", "-show_entries", "format=duration",
@@ -84,7 +50,7 @@ async def enhance_video(client: Client, message: Message):
         return await message.reply(f"❌ Couldn't get video duration: {e}")
 
     output_path = "enhanced.mp4"
-    processing_msg = await message.reply("⚙️ Enhancing video...")
+    processing_msg = await message.reply("⚡ Enhancing video: 0%")
 
     # FFmpeg command with filters for enhancement
     cmd = [
@@ -102,7 +68,6 @@ async def enhance_video(client: Client, message: Message):
     process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
     time_pattern = re.compile(r'time=(\d+):(\d+):(\d+).(\d+)')
     last_percent = -1
-    start_time = time.time()
 
     while True:
         line = process.stdout.readline()
@@ -113,11 +78,11 @@ async def enhance_video(client: Client, message: Message):
             h, m, s, ms = map(int, match.groups())
             current_seconds = h * 3600 + m * 60 + s + ms / 100
             percent = int((current_seconds / total_duration) * 100)
-            if percent != last_percent and percent > 0:
-                elapsed = time.time() - start_time
-                eta = elapsed * (100 - percent) / percent if percent else 0
-                eta_formatted = time_formatter(eta)
-                await processing_msg.edit_text(f"⚡ Enhancing video: {percent}%\nETA: {eta_formatted}")
+            eta_seconds = (total_duration - current_seconds)
+            if percent != last_percent:
+                await processing_msg.edit_text(
+                    f"⚡ Enhancing video: {percent}%\nETA: {time_formatter(eta_seconds)}"
+                )
                 last_percent = percent
 
     retcode = process.poll()
@@ -131,17 +96,21 @@ async def enhance_video(client: Client, message: Message):
         os.remove(input_path)
         return
 
-    await message.reply("⬆️ Uploading enhanced video...")
+    uploading_msg = await message.reply("⬆️ Uploading enhanced video...")
     await client.send_chat_action(message.chat.id, ChatAction.UPLOAD_VIDEO)
 
     await message.reply_video(
         video=output_path,
         caption="✅ Enhanced Video (1080p) with original audio and subtitles",
         progress=progress,
-        progress_args=(message, os.path.getsize(output_path), message, time.time())
+        progress_args=(message, os.path.getsize(output_path), message, time())
     )
 
-    # Cleanup
+    # Cleanup progress messages and files
+    await downloading_msg.delete()
+    await processing_msg.delete()
+    await uploading_msg.delete()
+
     os.remove(input_path)
     os.remove(output_path)
 
