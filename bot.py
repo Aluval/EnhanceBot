@@ -8,7 +8,7 @@ from pyrogram.types import Message
 from utils import progress, humanbytes, time_formatter
 
 API_ID = int(os.getenv("API_ID", "10811400"))
-API_HASH = os.getenv("API_HASH", "191bf5ae7a6c39771e7b13cf4ffd1279"))
+API_HASH = os.getenv("API_HASH", "191bf5ae7a6c39771e7b13cf4ffd1279")
 BOT_TOKEN = os.getenv("BOT_TOKEN", "7097361755:AAHJcqT4_YBvSq5hG7FwP5kDhugFBTwfRQE")
 LOG_CHANNEL = int(os.getenv("LOG_CHANNEL", "-1002067650699")
 
