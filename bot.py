@@ -12,29 +12,8 @@ BOT_TOKEN = os.getenv("BOT_TOKEN", "7097361755:AAHJcqT4_YBvSq5hG7FwP5kDhugFBTwfR
 
 app = Client("enhance_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
-import os 
-import json 
-import uuid 
-import subprocess 
-from time import time
-from pyrogram import Client, filters 
-from pyrogram.types import Message 
 
-JOBS_DIR = "jobs" 
-os.makedirs(JOBS_DIR, exist_ok=True)
-
-
-def save_job(job_id, data): 
-    with open(f"{JOBS_DIR}/{job_id}.json", "w") as f: 
-        json.dump(data, f)
-
-def load_jobs(): 
-    jobs = [] 
-    for file in os.listdir(JOBS_DIR): 
-        if file.endswith(".json"): 
-           with open(f"{JOBS_DIR}/{file}") as f:
-               jobs.append(json.load(f)) 
-        return jobs
+MAX_FILE_SIZE = 300 * 1024 * 1024  # 300MB
 
 @app.on_message(filters.command("enhance") & filters.reply)
 async def enhance_video(client: Client, message: Message):
@@ -42,113 +21,77 @@ async def enhance_video(client: Client, message: Message):
         return await message.reply("Please reply to a video file with /enhance command.")
 
     video_msg = message.reply_to_message
-    start_time = time()
-    downloading = await message.reply("Downloading video...")
+    file_size = video_msg.video.file_size
 
-    try:
-        input_path = await video_msg.download(
-            progress=progress,
-            progress_args=(downloading, start_time)
-        )
-    except Exception as e:
-        return await message.reply(f"Failed to download video: {e}")
+    if file_size > MAX_FILE_SIZE:
+        return await message.reply("❌ File is larger than 300MB. Please send a smaller video.")
 
-    if not os.path.exists(input_path) or os.path.getsize(input_path) == 0:
-        return await message.reply("Downloaded file is empty or missing. Please try again.")
+    start = time()
+    downloading = await message.reply("⬇️ Downloading video...")
+    input_path = await video_msg.download(
+        progress=progress,
+        progress_args=(downloading, start)
+    )
 
-    # Generate unique job ID and save job metadata
-    job_id = str(uuid.uuid4())
-    job_data = {
-        "job_id": job_id,
-        "user_id": message.from_user.id,
-        "chat_id": message.chat.id,
-        "input_path": input_path,
-        "status": "downloaded"
-    }
-
-    save_job(job_id, job_data)
-    await process_enhancement(client, job_data)
-
-async def process_enhancement(client: Client, job):
-    input_path = job["input_path"]
-    output_path = f"enhanced_{job['job_id']}.mp4"
-
-    # Get video duration
+    # Get duration
     try:
         duration_cmd = [
             "ffprobe", "-v", "error", "-show_entries", "format=duration",
             "-of", "default=noprint_wrappers=1:nokey=1", input_path
         ]
         duration = subprocess.check_output(duration_cmd).decode().strip()
-        await client.send_message(job["chat_id"], f"Video Duration: {float(duration):.2f} seconds")
+        await message.reply(f"⏱️ Video Duration: {float(duration):.2f} seconds")
     except Exception as e:
-        await client.send_message(job["chat_id"], f"Failed to get duration: {e}")
+        await message.reply(f"⚠️ Failed to get video duration: {e}")
 
-    processing_msg = await client.send_message(job["chat_id"], "Enhancing video...")
-    job["status"] = "processing"
-    save_job(job["job_id"], job)
+    output_path = "enhanced.mp4"
+    processing_msg = await message.reply("⚙️ Enhancing video...")
 
-    # FFmpeg enhancement command
     cmd = [
         "ffmpeg", "-i", input_path,
-        "-vf", "scale=1920:1080:flags=lanczos,hqdn3d,unsharp=5:5:1.0:5:5:0.0,eq=contrast=1.2:brightness=0.05:saturation=1.2",
-        "-map", "0", "-c:v", "libx264", "-preset", "faster", "-crf", "28",
-        "-c:a", "copy", "-c:s", "copy",
+        "-vf", "scale=1920:1080:flags=lanczos,hqdn3d,unsharp=5:5:1.0:5:5:0.0,"
+               "eq=contrast=1.2:brightness=0.05:saturation=1.2",
+        "-map", "0",
+        "-c:v", "libx264", "-preset", "faster", "-crf", "28",
+        "-c:a", "copy",
+        "-c:s", "mov_text",  # safer subtitle codec
         output_path
     ]
 
     process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+
     while True:
         line = process.stdout.readline()
         if line == "" and process.poll() is not None:
             break
         if "time=" in line:
-            try:
-                await processing_msg.edit_text(f"Enhancing video...\n{line.strip()}")
-            except Exception:
-                pass  # Prevent crash if message edit rate-limited
+            await processing_msg.edit_text(f"⚙️ Enhancing video...\n`{line.strip()}`")
 
-    # Check output file
-    if not os.path.exists(output_path) or os.path.getsize(output_path) == 0:
-        await client.send_message(job["chat_id"], "Enhancement failed or output file is 0 B.")
+    # FFmpeg exit check
+    retcode = process.poll()
+    if retcode != 0:
+        await message.reply(f"❌ FFmpeg failed with code {retcode}.")
+        os.remove(input_path)
         return
 
-    await client.send_message(job["chat_id"], "Uploading enhanced video...")
-    await client.send_chat_action(job["chat_id"], "upload_video")
+    # Validate output file
+    if not os.path.exists(output_path) or os.path.getsize(output_path) == 0:
+        await message.reply("❌ Enhanced file is empty or missing.")
+        os.remove(input_path)
+        return
 
-    await client.send_video(
-        chat_id=job["chat_id"],
+    await message.reply("⬆️ Uploading enhanced video...")
+    await client.send_chat_action(message.chat.id, ChatAction.UPLOAD_VIDEO)
+
+    await message.reply_video(
         video=output_path,
-        caption="Enhanced Video (1080p) with original audio and subtitles",
+        caption="✅ Enhanced Video (1080p) with original audio and subtitles",
         progress=progress,
-        progress_args=(processing_msg, time())
+        progress_args=(message, time())
     )
 
-    job["status"] = "done"
-    save_job(job["job_id"], job)
-
-    # Cleanup
-    try:
-        os.remove(input_path)
-        os.remove(output_path)
-        os.remove(f"{JOBS_DIR}/{job['job_id']}.json")
-    except Exception as e:
-        print(f"Cleanup failed: {e}")
-        
-@app.on_message(filters.command("resume_jobs")) 
-async def resume_jobs(client: Client, message: Message): 
-    jobs = load_jobs() 
-    for job in jobs: 
-        if job["status"] in ["downloaded", "processing"]: 
-            await process_enhancement(client, job)
-
-
-
-@app.on_message(filters.command("start")) 
-async def on_start(client: Client, message: Message): 
-    await resume_jobs(client, message)
-
-
+    os.remove(input_path)
+    os.remove(output_path)    
 
 if __name__ == "__main__":
     app.run()
