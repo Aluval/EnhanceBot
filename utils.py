@@ -1,7 +1,6 @@
 import time
 
 def humanbytes(size):
-    # Converts bytes into a readable format
     if not size:
         return ""
     power = 2**10
@@ -13,15 +12,13 @@ def humanbytes(size):
     return f"{round(size, 2)} {power_labels[n]}B"
 
 def time_formatter(seconds):
-    # Converts seconds into H:M:S format
     seconds = int(seconds)
     hours = seconds // 3600
     minutes = (seconds % 3600) // 60
     seconds = seconds % 60
     return f"{hours}h {minutes}m {seconds}s" if hours else f"{minutes}m {seconds}s"
 
-async def progress(current, total, message, start):
-    # Handles progress bar logic during download/upload
+async def progress(current, total, message, start, *args, **kwargs):  # Accept extra args
     now = time.time()
     diff = now - start
     if diff == 0:
