@@ -5,7 +5,7 @@ from time import time
 from pyrogram import Client, filters
 from pyrogram.enums import ChatAction
 from pyrogram.types import Message
-from utils import progress_message, humanbytes, TimeFormatter
+from utils import progress_message, humanbytes
 
 
 
