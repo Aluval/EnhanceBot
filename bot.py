@@ -1,26 +1,19 @@
+
+
 from pyrogram import Client, filters
 from pyrogram.types import Message
 from pyrogram.enums import ChatAction
-from time import time
 import os
 import subprocess
-from utils import progress
+import re
+from time import time
+from utils import progress, humanbytes, time_formatter
 
-API_ID = int(os.getenv("API_ID", "10811400"))     # Replace with your API_ID
-API_HASH = os.getenv("API_HASH", "191bf5ae7a6c39771e7b13cf4ffd1279")  # Replace with your API_HASH
-BOT_TOKEN = os.getenv("BOT_TOKEN", "7097361755:AAHJcqT4_YBvSq5hG7FwP5kDhugFBTwfRQE")  # Replace with your Bot Token
+API_ID = int(os.getenv("API_ID", "10811400"))
+API_HASH = os.getenv("API_HASH", "191bf5ae7a6c39771e7b13cf4ffd1279")
+BOT_TOKEN = os.getenv("BOT_TOKEN", "7097361755:AAHJcqT4_YBvSq5hG7FwP5kDhugFBTwfRQE")
 
 app = Client("enhance_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
-
-from pyrogram import Client, filters
-from pyrogram.types import Message
-from pyrogram.enums import ChatAction
-import os
-import subprocess
-from time import time
-import re
-
-
 
 MAX_FILE_SIZE = 300 * 1024 * 1024  # 300MB
 
@@ -39,7 +32,7 @@ async def enhance_video(client: Client, message: Message):
     downloading = await message.reply("⬇️ Downloading video...")
     input_path = await video_msg.download(
         progress=progress,
-        progress_args=(downloading, video_msg.video.file_size, downloading, start)
+        progress_args=(downloading, file_size, downloading, start)
     )
 
     if not os.path.exists(input_path) or os.path.getsize(input_path) == 0:
@@ -53,11 +46,12 @@ async def enhance_video(client: Client, message: Message):
         ]
         total_duration = float(subprocess.check_output(duration_cmd).decode().strip())
     except Exception as e:
+        os.remove(input_path)
         return await message.reply(f"❌ Couldn't get video duration: {e}")
 
-    output_path = "enhanced.mp4"
-    processing_msg = await message.reply("⚙️ Enhancing video...")
+    processing_msg = await message.reply("MULTI ARM 24 BOT:\n⚙️ Enhancing video...")
 
+    output_path = "enhanced.mp4"
     cmd = [
         "ffmpeg", "-i", input_path,
         "-vf", "scale=1920:1080:flags=lanczos,hqdn3d,"
@@ -74,6 +68,11 @@ async def enhance_video(client: Client, message: Message):
     time_pattern = re.compile(r'time=(\d+):(\d+):(\d+).(\d+)')
     last_percent = -1
 
+    def format_time(seconds):
+        m, s = divmod(int(seconds), 60)
+        h, m = divmod(m, 60)
+        return f"{h:02}:{m:02}:{s:02}"
+
     while True:
         line = process.stdout.readline()
         if line == "" and process.poll() is not None:
@@ -81,16 +80,18 @@ async def enhance_video(client: Client, message: Message):
         match = time_pattern.search(line)
         if match:
             h, m, s, ms = map(int, match.groups())
-            current_seconds = h * 3600 + m * 60 + s + ms / 100
-            percent = int((current_seconds / total_duration) * 100)
-            if percent != last_percent:
-                await processing_msg.edit_text(f"⚡ Enhancing video: {percent}%")
+            current_sec = h * 3600 + m * 60 + s + ms / 100
+            percent = int((current_sec / total_duration) * 100)
+            if percent != last_percent and percent <= 100:
+                current_time = format_time(current_sec)
+                total_time = format_time(total_duration)
+                await processing_msg.edit_text(
+                    f"MULTI ARM 24 BOT:\n⚡ Enhancing video: {percent}% ({current_time} / {total_time})"
+                )
                 last_percent = percent
 
-    # FFmpeg check
-    retcode = process.poll()
-    if retcode != 0:
-        await message.reply(f"❌ FFmpeg failed with code {retcode}.")
+    if process.poll() != 0:
+        await message.reply(f"❌ FFmpeg failed with code {process.poll()}.")
         os.remove(input_path)
         return
 
@@ -99,7 +100,7 @@ async def enhance_video(client: Client, message: Message):
         os.remove(input_path)
         return
 
-    await message.reply("⬆️ Uploading enhanced video...")
+    await processing_msg.edit_text("⬆️ Uploading enhanced video...")
     await client.send_chat_action(message.chat.id, ChatAction.UPLOAD_VIDEO)
 
     await message.reply_video(
@@ -111,9 +112,6 @@ async def enhance_video(client: Client, message: Message):
 
     os.remove(input_path)
     os.remove(output_path)
-
-
-
 
 if __name__ == "__main__":
     app.run()
