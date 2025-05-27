@@ -1,3 +1,4 @@
+from pyrogram.types import Message
 from time import time
 
 # Utility: Format seconds to HH:MM:SS string
