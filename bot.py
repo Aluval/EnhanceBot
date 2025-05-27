@@ -116,11 +116,9 @@ async def enhance_command(client: Client, message: Message):
     except Exception as e:
         await message.reply(f"❌ Upload failed: {e}")
 
-    await client.send_message(LOG_CHANNEL, f"✅ Done enhancing for {user_name}\nFile: `{filename}`")
+    await client.send_message(LOG_CHANNEL, f"✅ Enhancement completed for {user_name}\nFile: `{output_filename}`")
     os.remove(input_path)
     os.remove(output_filename)
 
-
 if __name__ == "__main__":
     app.run()
-    
