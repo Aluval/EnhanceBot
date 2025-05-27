@@ -153,7 +153,7 @@ async def compress_video(client: Client, message: Message):
     cmd = [
         "ffmpeg", "-i", input_path,
         "-c:v", "libx265", "-preset", "ultrafast", "-crf", "28",
-        "-c:a", "aac", "-c:s", "copy", "-map", "0",
+        "-c:a", "copy", "-c:s", "copy", "-map", "0",
         output_path
     ]
 
@@ -199,6 +199,37 @@ async def compress_video(client: Client, message: Message):
     os.remove(output_path)
 
 
+
+@Client.on_message(filters.command("convert") & filters.reply)
+async def video_to_document(client: Client, message: Message):
+    if not message.reply_to_message or not message.reply_to_message.video:
+        return await message.reply("❌ Please reply to a video with /convert command.")
+
+    video_msg = message.reply_to_message
+    file_size = video_msg.video.file_size
+
+    if file_size > 2 * 1024 * 1024 * 1024:
+        return await message.reply("❌ File is larger than 300MB. Please send a smaller video.")
+
+    start = time.time()
+    status_message = await message.reply("⬇️ Downloading video...")
+
+    input_path = await video_msg.download(
+        progress=lambda cur, tot: client.loop.create_task(progress(cur, tot, status_message, start, "Downloading"))
+    )
+
+    await status_message.edit_text("⬆️ Uploading as document...")
+
+    start_upload = time.time()
+    await client.send_document(
+        chat_id=message.chat.id,
+        document=input_path,
+        caption="Here is your video as a document",
+        progress=lambda cur, tot: client.loop.create_task(progress(cur, tot, status_message, start_upload, "Uploading"))
+    )
+
+    await status_message.delete()
+    os.remove(input_path)
 
 
 if __name__ == "__main__":
