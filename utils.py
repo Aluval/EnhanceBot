@@ -1,6 +1,5 @@
 from pyrogram.types import Message
 import time
-from time import time
 
 # Utility: Format seconds to HH:MM:SS string
 def time_formatter(seconds: float) -> str:
