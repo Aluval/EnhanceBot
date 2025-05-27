@@ -20,12 +20,11 @@ async def progress(current, total, message: Message, start):
         )
 
 def humanbytes(size):
-    # Converts bytes to human-readable format
     if not size:
-        return ""
+        return "0 B"
     power = 1024
     n = 0
-    Dic_powerN = {0: '', 1: 'KB', 2: 'MB', 3: 'GB', 4: 'TB'}
+    Dic_powerN = {0: 'B', 1: 'KB', 2: 'MB', 3: 'GB'}
     while size > power:
         size /= power
         n += 1
@@ -36,6 +35,7 @@ def time_formatter(seconds):
     minutes, sec = divmod(seconds, 60)
     hours, minutes = divmod(minutes, 60)
     days, hours = divmod(hours, 24)
-    time_str = (f"{days}d " if days else "") + (f"{hours}h " if hours else "") + \
-               (f"{minutes}m " if minutes else "") + (f"{sec}s" if sec else "")
-    return time_str.strip()
+    return (f"{days}d " if days else "") + \
+           (f"{hours}h " if hours else "") + \
+           (f"{minutes}m " if minutes else "") + \
+           (f"{sec}s" if sec else "")
