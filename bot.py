@@ -6,15 +6,16 @@ import subprocess
 import re
 import time
 
-API_ID = int(os.getenv("API_ID", "10811400"))     # Replace with your API_ID
-API_HASH = os.getenv("API_HASH", "191bf5ae7a6c39771e7b13cf4ffd1279")  # Replace with your API_HASH
-BOT_TOKEN = os.getenv("BOT_TOKEN", "7097361755:AAHJcqT4_YBvSq5hG7FwP5kDhugFBTwfRQE")  # Replace with your Bot Token
+API_ID = int(os.getenv("API_ID", "10811400"))
+API_HASH = os.getenv("API_HASH", "191bf5ae7a6c39771e7b13cf4ffd1279")
+BOT_TOKEN = os.getenv("BOT_TOKEN", "7097361755:AAHJcqT4_YBvSq5hG7FwP5kDhugFBTwfRQE")
+
+LOG_CHANNEL_ID = int(os.getenv("LOG_CHANNEL_ID", "-1002067650699"))  # Set your log channel here
 
 app = Client("enhance_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
 MAX_FILE_SIZE = 300 * 1024 * 1024  # 300MB
 
-# Utility: Format seconds to HH:MM:SS string
 def time_formatter(seconds: float) -> str:
     seconds = int(seconds)
     h = seconds // 3600
@@ -22,9 +23,7 @@ def time_formatter(seconds: float) -> str:
     s = seconds % 60
     return f"{h:02d}:{m:02d}:{s:02d}"
 
-# Utility: Human-readable bytes (optional, if used in progress)
 def humanbytes(size):
-    # Simple function to convert bytes to KB/MB/GB strings
     power = 2**10
     n = 0
     power_labels = {0: '', 1: 'KB', 2: 'MB', 3: 'GB', 4: 'TB'}
@@ -33,7 +32,6 @@ def humanbytes(size):
         n += 1
     return f"{size:.2f} {power_labels[n]}"
 
-# Progress callback for downloads/uploads (optional, from your utils)
 async def progress(current, total, message: Message, start, *args):
     now = time.time()
     diff = now - start
@@ -50,32 +48,52 @@ async def progress(current, total, message: Message, start, *args):
                 f"ETA: {time_formatter(eta)}"
             )
         except:
-            pass  # ignore edit failures due to Telegram rate limits
+            pass
 
 @app.on_message(filters.command("enhance") & filters.reply)
 async def enhance_video(client: Client, message: Message):
-    if not message.reply_to_message or not message.reply_to_message.video:
-        return await message.reply("❌ Please reply to a video file with /enhance.")
+    args = message.text.split(maxsplit=2)
+
+    if len(args) < 3 or args[1] != "-n":
+        await message.reply("❌ Usage: /enhance -n filename.ext (reply to a video or document)")
+        return
+
+    output_path = args[2].strip()
+    if not output_path.lower().endswith(('.mp4', '.mkv', '.mov', '.avi')):
+        await message.reply("❌ Output filename must have a valid video extension (e.g., .mp4, .mkv)")
+        return
+
+    if not message.reply_to_message or not (message.reply_to_message.video or message.reply_to_message.document):
+        await message.reply("❌ Please reply to a video or video document file.")
+        return
 
     video_msg = message.reply_to_message
-    file_size = video_msg.video.file_size
+    media = video_msg.video or video_msg.document
+    file_size = media.file_size
 
     if file_size > MAX_FILE_SIZE:
-        return await message.reply("❌ File is larger than 300MB. Please send a smaller video.")
+        await message.reply("❌ File is larger than 300MB. Please send a smaller video.")
+        return
+
+    # Log start to channel
+    user = message.from_user
+    await client.send_message(
+        LOG_CHANNEL_ID,
+        f"▶️ User @{user.username or 'no_username'} (ID: {user.id}) started enhancing file, output: {output_path}"
+    )
 
     start = time.time()
     downloading = await message.reply("⬇️ Downloading video...")
-    input_path = await video_msg.download(
+    input_path = await media.download(
         progress=progress,
-        progress_args=(downloading, video_msg.video.file_size, downloading, start)
+        progress_args=(downloading, media.file_size, downloading, start)
     )
-    # Delete the download progress message after download finishes
     await downloading.delete()
 
     if not os.path.exists(input_path) or os.path.getsize(input_path) == 0:
-        return await message.reply("❌ Download failed or file is empty.")
+        await message.reply("❌ Download failed or file is empty.")
+        return
 
-    # Get video duration with ffprobe
     try:
         duration_cmd = [
             "ffprobe", "-v", "error", "-show_entries", "format=duration",
@@ -83,12 +101,12 @@ async def enhance_video(client: Client, message: Message):
         ]
         total_duration = float(subprocess.check_output(duration_cmd).decode().strip())
     except Exception as e:
-        return await message.reply(f"❌ Couldn't get video duration: {e}")
+        await message.reply(f"❌ Couldn't get video duration: {e}")
+        os.remove(input_path)
+        return
 
-    output_path = "enhanced.mp4"
     processing_msg = await message.reply("⚙️ Enhancing video...")
 
-    # FFmpeg command with filters for enhancement
     cmd = [
         "ffmpeg", "-i", input_path,
         "-vf", "scale=1920:1080:flags=lanczos,hqdn3d,"
@@ -119,10 +137,12 @@ async def enhance_video(client: Client, message: Message):
                 elapsed = time.time() - start_time
                 eta = elapsed * (100 - percent) / percent if percent else 0
                 eta_formatted = time_formatter(eta)
-                await processing_msg.edit_text(f"⚡ Enhancing video: {percent}%\nETA: {eta_formatted}")
+                try:
+                    await processing_msg.edit_text(f"⚡ Enhancing video: {percent}%\nETA: {eta_formatted}")
+                except:
+                    pass
                 last_percent = percent
 
-    # Delete enhancement progress message after finishing
     await processing_msg.delete()
 
     retcode = process.poll()
@@ -139,18 +159,31 @@ async def enhance_video(client: Client, message: Message):
     upload_msg = await message.reply("⬆️ Uploading enhanced video...")
     await client.send_chat_action(message.chat.id, ChatAction.UPLOAD_VIDEO)
 
-    await message.reply_video(
-        video=output_path,
-        caption="✅ Enhanced Video (1080p) with original audio and subtitles",
-        progress=progress,
-        progress_args=(upload_msg, os.path.getsize(output_path), upload_msg, time.time())
-    )
-    # Delete upload progress message after upload finishes
+    output_size = os.path.getsize(output_path)
+    if video_msg.video:
+        await message.reply_video(
+            video=output_path,
+            caption="✅ Enhanced Video (1080p) with original audio and subtitles",
+            progress=progress,
+            progress_args=(upload_msg, output_size, upload_msg, time.time())
+        )
+    else:
+        await message.reply_document(
+            document=output_path,
+            caption="✅ Enhanced Video (1080p) as Document",
+            progress=progress,
+            progress_args=(upload_msg, output_size, upload_msg, time.time())
+        )
+
     await upload_msg.delete()
 
-    # Cleanup
     os.remove(input_path)
     os.remove(output_path)
+
+    await client.send_message(
+        LOG_CHANNEL_ID,
+        f"✅ User @{user.username or 'no_username'} (ID: {user.id}) completed enhancing video: {output_path}"
+    )
 
 if __name__ == "__main__":
     app.run()
