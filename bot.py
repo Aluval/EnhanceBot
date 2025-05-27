@@ -49,20 +49,23 @@ async def progress(current, total, message: Message, start, *args):
         except:
             pass
 
+
 @app.on_message(filters.command("enhance") & filters.reply)
-async def enhance_with_name(client: Client, message: Message):
+async def enhance_video(client: Client, message: Message):
     if not message.reply_to_message or not message.reply_to_message.video:
-        return await message.reply("❌ Please reply to a video with `/enhance -n filename.mkv`")
+        return await message.reply("❌ Please reply to a video file with /enhance.")
 
-    text = message.text.strip()
-    match = re.search(r"-n\s+(.+)", text)
-    if not match:
-        return await message.reply("❌ Missing `-n` filename.\nUse like `/enhance -n your_file.mkv`")
+    cmd = message.text.split(maxsplit=2)
+    custom_name = "enhanced.mp4"
+    if "-n" in cmd:
+        name_index = cmd.index("-n") + 1
+        if name_index < len(cmd):
+            custom_name = cmd[name_index]
+            if not custom_name.endswith(".mp4"):
+                custom_name += ".mp4"
 
-    filename = match.group(1).strip()
-    if not filename.lower().endswith(('.mp4', '.mkv', '.mov')):
-        return await message.reply("❌ Please provide a valid video filename with extension.")
-
+    user_id = message.from_user.id
+    username = message.from_user.username or "NoUsername"
     video_msg = message.reply_to_message
     file_size = video_msg.video.file_size
 
@@ -70,7 +73,7 @@ async def enhance_with_name(client: Client, message: Message):
         return await message.reply("❌ File is larger than 300MB. Please send a smaller video.")
 
     start = time.time()
-    downloading = await message.reply("⬇️ Downloading video...")
+    downloading = await message.reply("⏬ Downloading video...")
     input_path = await video_msg.download(
         progress=progress,
         progress_args=(downloading, video_msg.video.file_size, downloading, start)
@@ -80,6 +83,17 @@ async def enhance_with_name(client: Client, message: Message):
     if not os.path.exists(input_path) or os.path.getsize(input_path) == 0:
         return await message.reply("❌ Download failed or file is empty.")
 
+    # Log initiation to log channel
+    await client.send_message(
+        chat_id=LOG_CHANNEL_ID,
+        text=(
+            f"**Enhancement Started**\n"
+            f"👤 User: `{username}` (`{user_id}`)\n"
+            f"📎 Filename: `{custom_name}`"
+        )
+    )
+
+    # Get duration
     try:
         duration_cmd = [
             "ffprobe", "-v", "error", "-show_entries", "format=duration",
@@ -89,17 +103,18 @@ async def enhance_with_name(client: Client, message: Message):
     except Exception as e:
         return await message.reply(f"❌ Couldn't get video duration: {e}")
 
+    output_path = "enhanced.mp4"
     processing_msg = await message.reply("⚙️ Enhancing video...")
 
+    # FFmpeg enhancement command
     cmd = [
         "ffmpeg", "-i", input_path,
         "-vf", "scale=1920:1080:flags=lanczos,hqdn3d,"
                "unsharp=5:5:1.0:5:5:0.0,"
                "eq=contrast=1.2:brightness=0.05:saturation=1.2",
-        "-map", "0",
-        "-c:v", "libx264", "-preset", "ultrafast", "-crf", "28",
+        "-map", "0", "-c:v", "libx264", "-preset", "ultrafast", "-crf", "28",
         "-c:a", "copy", "-c:s", "mov_text",
-        filename
+        output_path
     ]
 
     process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
@@ -117,10 +132,8 @@ async def enhance_with_name(client: Client, message: Message):
             current_seconds = h * 3600 + m * 60 + s + ms / 100
             percent = int((current_seconds / total_duration) * 100)
             if percent != last_percent and percent > 0:
-                elapsed = time.time() - start_time
-                eta = elapsed * (100 - percent) / percent if percent else 0
-                eta_formatted = time_formatter(eta)
-                await processing_msg.edit_text(f"⚡ Enhancing video: {percent}%\nETA: {eta_formatted}")
+                eta = time_formatter((time.time() - start_time) * (100 - percent) / percent)
+                await processing_msg.edit_text(f"⚡ Enhancing video: {percent}%\nETA: {eta}")
                 last_percent = percent
 
     await processing_msg.delete()
@@ -130,31 +143,31 @@ async def enhance_with_name(client: Client, message: Message):
         os.remove(input_path)
         return await message.reply(f"❌ FFmpeg failed with code {retcode}.")
 
-    if not os.path.exists(filename) or os.path.getsize(filename) == 0:
+    if not os.path.exists(output_path) or os.path.getsize(output_path) == 0:
         os.remove(input_path)
-        return await message.reply("❌ Enhanced file is missing or empty.")
+        return await message.reply("❌ Enhanced file is empty or missing.")
 
     upload_msg = await message.reply("⬆️ Uploading enhanced video...")
     await client.send_chat_action(message.chat.id, ChatAction.UPLOAD_DOCUMENT)
 
     await message.reply_document(
-        document=filename,
-        caption=f"✅ Enhanced Video as `{filename}`",
+        document=output_path,
+        file_name=custom_name,
+        caption="✅ Enhanced Video (1080p) as Document",
         progress=progress,
-        progress_args=(upload_msg, os.path.getsize(filename), upload_msg, time.time())
+        progress_args=(upload_msg, os.path.getsize(output_path), upload_msg, time.time())
     )
+
     await upload_msg.delete()
-
-    # Logging to LOG_CHANNEL
-    user = message.from_user
-    await app.send_message(
-        LOG_CHANNEL,
-        f"✅ Enhancement completed for `{filename}`\n"
-        f"User: [{user.first_name}](tg://user?id={user.id}) (`{user.id}`)"
-    )
-
     os.remove(input_path)
-    os.remove(filename)
+    os.remove(output_path)
 
-if __name__ == "__main__":
-    app.run()
+    # Log completion
+    await client.send_message(
+        chat_id=LOG_CHANNEL_ID,
+        text=(
+            f"**Enhancement Completed**\n"
+            f"👤 User: `{username}` (`{user_id}`)\n"
+            f"📎 Filename: `{custom_name}`"
+        )
+    )
