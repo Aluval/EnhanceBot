@@ -14,6 +14,7 @@ from pyrogram.types import (
     CallbackQuery
 )
 
+
 #ALL FILES UPLOADED - CREDITS 🌟 - @Sunrises_24
 API_ID = int(os.getenv("API_ID", "10811400"))     # Replace with your API_ID
 API_HASH = os.getenv("API_HASH", "191bf5ae7a6c39771e7b13cf4ffd1279")  # Replace with your API_HASH
@@ -21,6 +22,8 @@ BOT_TOKEN = os.getenv("BOT_TOKEN", "7097361755:AAHJcqT4_YBvSq5hG7FwP5kDhugFBTwfR
 ADMIN = int(os.environ.get("ADMIN", '6469754522'))
 #ALL FILES UPLOADED - CREDITS 🌟 - @Sunrises_24
 SUNRISES_PIC= "https://graph.org/file/bd91761f6e938e2e6d23a.jpg"  # Replace with your Telegraph link
+UPDATES_CHANNEL = os.getenv("UPDATES_CHANNEL", "https://t.me/Sunrises24BotUpdates") # Replace with your Updates link
+SUPPORT_GROUP = os.getenv("SUPPORT_GROUP", "https://t.me/Sunrises24BotSupport") # Replace with your Support link
 
 app = Client("enhance_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
