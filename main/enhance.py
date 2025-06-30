@@ -108,3 +108,7 @@ async def enhance_video(client: Client, message: Message):
     # Cleanup
     os.remove(input_path)
     os.remove(output_path)
+
+if __name__ == '__main__':
+    app = Client("my_bot", bot_token=BOT_TOKEN)
+    app.run()
