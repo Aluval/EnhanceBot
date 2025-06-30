@@ -126,64 +126,69 @@ async def stats_command(_, msg: Message):
     cpu_usage = psutil.cpu_percent()
     ram_usage = psutil.virtual_memory().percent
 
-    stats_text = (
-        "🖥️ **PixelPulseBot[EnhanceBot] Server Status**\n\n"
-        f"⏱️ **Uptime:** `{uptime_str}`\n"
-        f"💾 **Disk:** `{used_space:.2f} GB / {total_space:.2f} GB` "
-        f"({used_space / total_space * 100:.1f}%)\n"
+    stats_message = (
+        f"📊 **Server Stats** 📊\n\n"
+        f"⏳ **Uptime:** `{uptime_str}`\n"
+        f"💾 **Total Space:** `{total_space:.2f} GB`\n"
+        f"📂 **Used Space:** `{used_space:.2f} GB` ({used_space / total_space * 100:.1f}%)\n"
+        f"📁 **Free Space:** `{free_space:.2f} GB`\n"
         f"⚙️ **CPU Usage:** `{cpu_usage:.1f}%`\n"
-        f"🧠 **RAM Usage:** `{ram_usage:.1f}%`\n"
+        f"💻 **RAM Usage:** `{ram_usage:.1f}%`\n"
     )
 
     keyboard = InlineKeyboardMarkup([
         [InlineKeyboardButton("🔄 Refresh", callback_data="refresh_stats")],
-        [InlineKeyboardButton("📢 UPDATES", url=UPDATES_CHANNEL)],
-        [InlineKeyboardButton("💬 Support", url=SUPPORT_GROUP)]
+        [
+            InlineKeyboardButton("📢 Updates", url=UPDATES_CHANNEL),
+            InlineKeyboardButton("💬 Support", url=SUPPORT_GROUP)
+        ]
     ])
 
     await msg.reply_photo(
         photo=SUNRISES_PIC,
-        caption=stats_text,
+        caption=stats_message,
         reply_markup=keyboard
     )
 
-
-# 🔁 /stats Refresh Handler
 @Client.on_callback_query(filters.regex("^refresh_stats$"))
-async def refresh_stats_callback(_, query: CallbackQuery):
+async def refresh_stats_callback(_, callback_query: CallbackQuery):
+    uptime = datetime.datetime.now() - START_TIME
+    uptime_str = str(timedelta(seconds=int(uptime.total_seconds())))
+
+    total_space = psutil.disk_usage('/').total / (1024 ** 3)
+    used_space = psutil.disk_usage('/').used / (1024 ** 3)
+    free_space = psutil.disk_usage('/').free / (1024 ** 3)
+
+    cpu_usage = psutil.cpu_percent()
+    ram_usage = psutil.virtual_memory().percent
+
+    stats_message = (
+        f"📊 **Server Stats** 📊\n\n"
+        f"⏳ **Uptime:** `{uptime_str}`\n"
+        f"💾 **Total Space:** `{total_space:.2f} GB`\n"
+        f"📂 **Used Space:** `{used_space:.2f} GB` ({used_space / total_space * 100:.1f}%)\n"
+        f"📁 **Free Space:** `{free_space:.2f} GB`\n"
+        f"⚙️ **CPU Usage:** `{cpu_usage:.1f}%`\n"
+        f"💻 **RAM Usage:** `{ram_usage:.1f}%`\n"
+    )
+
+    keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton("🔄 Refresh", callback_data="refresh_stats")],
+        [
+            InlineKeyboardButton("📢 Updates", url=UPDATES_CHANNEL),
+            InlineKeyboardButton("💬 Support", url=SUPPORT_GROUP)
+        ]
+    ])
+
     try:
-        uptime = datetime.datetime.now() - START_TIME
-        uptime_str = str(timedelta(seconds=int(uptime.total_seconds())))
-
-        total_space = psutil.disk_usage('/').total / (1024 ** 3)
-        used_space = psutil.disk_usage('/').used / (1024 ** 3)
-        cpu_usage = psutil.cpu_percent()
-        ram_usage = psutil.virtual_memory().percent
-
-        stats_text = (
-            "🖥️ **PixelPulseBot[EnhanceBot] Server Status**\n\n"
-            f"⏱️ **Uptime:** `{uptime_str}`\n"
-            f"💾 **Disk:** `{used_space:.2f} GB / {total_space:.2f} GB` "
-            f"({used_space / total_space * 100:.1f}%)\n"
-            f"⚙️ **CPU Usage:** `{cpu_usage:.1f}%`\n"
-            f"🧠 **RAM Usage:** `{ram_usage:.1f}%`\n"
-        )
-
-        keyboard = InlineKeyboardMarkup([
-            [InlineKeyboardButton("🔄 Refresh", callback_data="refresh_stats")],
-            [InlineKeyboardButton("📢 UPDATES", url=UPDATES_CHANNEL)],
-            [InlineKeyboardButton("💬 Support", url=SUPPORT_GROUP)]
-        ])
-
-        await query.message.edit_caption(
-            caption=stats_text,
+        await callback_query.message.edit_caption(
+            caption=stats_message,
             reply_markup=keyboard
         )
-        await query.answer("🔄 Refreshed!")
+        await callback_query.answer("✅ Stats refreshed!")
     except Exception as e:
-        await query.answer("⚠️ Couldn't refresh. Try again later.", show_alert=True)
+        await callback_query.answer("⚠️ Could not refresh.", show_alert=True)
         print(f"Error refreshing stats: {e}")
-
 
 
 
