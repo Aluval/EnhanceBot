@@ -235,7 +235,7 @@ async def callback_handler(client, callback_query):
             "🔹 Denoise and sharpen\n"
             "🔹 Boost brightness and saturation\n"
             "🔹 Keep audio and subtitles intact\n\n"
-            "Built by: @Aluval\nPowered by: Pyrogram + FFmpeg",
+            "Built by: @Sunrises_24\nPowered by: Pyrogram + FFmpeg",
             reply_markup=InlineKeyboardMarkup([
                 [InlineKeyboardButton("🔙 Back", callback_data="start")]
             ])
