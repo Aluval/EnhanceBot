@@ -30,7 +30,7 @@ async def start_command(client: Client, message: Message):
     await message.reply_photo(
         photo=SUNRISES_PIC,  
         caption=(
-            "**👋 Welcome to EnhanceBot!**\n\n"
+            "**👋 Welcome to PixelPulseBot!**\n\n"
             "🔹 Send any video under **300MB**\n"
             "🔹 Reply with `/enhance` to improve sharpness, color, and quality.\n\n"
             "Click the buttons below to know more!"
@@ -41,7 +41,7 @@ async def start_command(client: Client, message: Message):
 @app.on_message(filters.command("help"))
 async def help_command(client: Client, message: Message):
     await message.reply_text(
-       "**🛠 EnhanceBot Help**\n\n"
+       "**🛠 PixelPulseBot[EnhanceBot] Help**\n\n"
             "`/start` - Welcome message\n"
             "`/help` - Show this help\n"
             "`/enhance` - Reply to a video to enhance it\n"
@@ -56,7 +56,7 @@ async def callback_handler(client, callback_query):
     data = callback_query.data
     if data == "about":
         await callback_query.message.edit_text(
-            "**📽️ About EnhanceBot**\n\n"
+            "**📽️ About PixelPulseBot[EnhanceBot]**\n\n"
             "EnhanceBot uses **FFmpeg** to:\n"
             "🔹 Upscale videos to 1080p\n"
             "🔹 Denoise and sharpen\n"
@@ -69,7 +69,7 @@ async def callback_handler(client, callback_query):
         )
     elif data == "help":
         await callback_query.message.edit_text(
-            "**🛠 EnhanceBot Help**\n\n"
+            "**🛠 PixelPulseBot[EnhanceBot] Help**\n\n"
             "`/start` - Welcome message\n"
             "`/help` - Show this help\n"
             "`/enhance` - Reply to a video to enhance it\n"
@@ -111,7 +111,7 @@ async def stats_command(_, msg: Message):
     ram_usage = psutil.virtual_memory().percent
 
     stats_text = (
-        "🖥️ **EnhanceBot Server Status**\n\n"
+        "🖥️ **PixelPulseBot[EnhanceBot] Server Status**\n\n"
         f"⏱️ **Uptime:** `{uptime_str}`\n"
         f"💾 **Disk:** `{used_space:.2f} GB / {total_space:.2f} GB` "
         f"({used_space / total_space * 100:.1f}%)\n"
@@ -146,7 +146,7 @@ async def refresh_stats_callback(_, query: CallbackQuery):
     ram_usage = psutil.virtual_memory().percent
 
     stats_text = (
-        "🖥️ **EnhanceBot Server Status**\n\n"
+        "🖥️ **PixelPulseBot[EnhanceBot] Server Status**\n\n"
         f"⏱️ **Uptime:** `{uptime_str}`\n"
         f"💾 **Disk:** `{used_space:.2f} GB / {total_space:.2f} GB` "
         f"({used_space / total_space * 100:.1f}%)\n"
@@ -170,7 +170,7 @@ async def refresh_stats_callback(_, query: CallbackQuery):
 @app.on_message(filters.command('logs') & filters.user(ADMIN))
 async def log_file(_, m: Message):
     try:
-        await m.reply_document("SunrisesBot.txt", caption="📄 Bot Logs File")
+        await m.reply_document("PixelPulseBot.txt", caption="📄 Bot Logs File")
     except Exception as e:
         await m.reply(f"❌ Error: `{str(e)}`")
       
