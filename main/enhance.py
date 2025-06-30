@@ -3,12 +3,13 @@ import time
 import re
 import subprocess
 from pyrogram import Client, filters
-from pyrogram.types import Message, ChatAction
+from pyrogram.types import Message
+from pyrogram.enums import ChatAction
 from main.utils import progress, humanbytes
 
 MAX_FILE_SIZE = 300 * 1024 * 1024  # 300MB
 
-
+#ALL FILES UPLOADED - CREDITS 🌟 - @Sunrises_24
 @app.on_message(filters.command("enhance") & filters.reply)
 async def enhance_video(client: Client, message: Message):
     if not message.reply_to_message or not message.reply_to_message.video:
