@@ -14,7 +14,7 @@ from pyrogram.types import (
 # Define Start Time for Uptime Calculation
 START_TIME = datetime.datetime.now()
 
-@app.on_message(filters.command("start"))
+@Client.on_message(filters.command("start"))
 async def start_command(client: Client, message: Message):
     buttons = InlineKeyboardMarkup([
         [
@@ -38,7 +38,7 @@ async def start_command(client: Client, message: Message):
         reply_markup=buttons
     )
 
-@app.on_message(filters.command("help"))
+@Client.on_message(filters.command("help"))
 async def help_command(client: Client, message: Message):
     await message.reply_text(
        "**🛠 PixelPulseBot[EnhanceBot] Help**\n\n"
@@ -51,7 +51,7 @@ async def help_command(client: Client, message: Message):
             "**Note:** File size must be under 300MB."
     )
 
-@app.on_callback_query()
+@Client.on_callback_query()
 async def callback_handler(client, callback_query):
     data = callback_query.data
     if data == "about":
@@ -85,7 +85,23 @@ async def callback_handler(client, callback_query):
         await start_command(client, callback_query.message)
 
 
-@app.on_message(filters.command("ping"))
+@Client.on_message(filters.command("about"))
+async def about_command(client: Client, message: Message):
+    await message.reply_text(
+        "**📽️ About PixelPulseBot**\n\n"
+        "PixelPulseBot is a Telegram bot that enhances videos using advanced FFmpeg filters.\n\n"
+        "**Key Features:**\n"
+        "✅ Upscale videos to 1080p\n"
+        "🎞️ Noise reduction\n"
+        "🎨 Color & sharpness enhancement\n"
+        "🔊 Retains original audio & subtitles\n\n"
+        "🔧 Powered by FFmpeg & Pyrogram\n"
+        "🧑‍💻 Developed by: @Sunrises_24\n"
+        "📢 Updates: @Sunrises24BotUpdates\n"
+        "💬 Support: @Sunrises24BotSupport"
+    )
+
+@Client.on_message(filters.command("ping"))
 async def ping(bot, msg: Message):
     start = time.time()
     response = await msg.reply_text("🔍 Pinging...")
@@ -98,7 +114,7 @@ async def ping(bot, msg: Message):
         "👤 Credits: @Sunrises_24"
     )
 # 🟢 /stats Command
-@app.on_message(filters.command("stats"))
+@Client.on_message(filters.command("stats"))
 async def stats_command(_, msg: Message):
     uptime = datetime.datetime.now() - START_TIME
     uptime_str = str(timedelta(seconds=int(uptime.total_seconds())))
@@ -133,7 +149,7 @@ async def stats_command(_, msg: Message):
 
 
 # 🔁 /stats Refresh Handler
-@app.on_callback_query(filters.regex("^refresh_stats$"))
+@Client.on_callback_query(filters.regex("^refresh_stats$"))
 async def refresh_stats_callback(_, query: CallbackQuery):
     uptime = datetime.datetime.now() - START_TIME
     uptime_str = str(timedelta(seconds=int(uptime.total_seconds())))
@@ -167,7 +183,7 @@ async def refresh_stats_callback(_, query: CallbackQuery):
 
 
 # 🔒 Admin-only /logs Command
-@app.on_message(filters.command('logs') & filters.user(ADMIN))
+@Client.on_message(filters.command('logs') & filters.user(ADMIN))
 async def log_file(_, m: Message):
     try:
         await m.reply_document("PixelPulseBot.txt", caption="📄 Bot Logs File")
