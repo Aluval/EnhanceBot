@@ -10,7 +10,7 @@ from main.utils import progress, humanbytes
 MAX_FILE_SIZE = 300 * 1024 * 1024  # 300MB
 
 #ALL FILES UPLOADED - CREDITS 🌟 - @Sunrises_24
-@app.on_message(filters.command("enhance") & filters.reply)
+@Client.on_message(filters.command("enhance") & filters.reply)
 async def enhance_video(client: Client, message: Message):
     if not message.reply_to_message or not message.reply_to_message.video:
         return await message.reply("❌ Please reply to a video file with /enhance.")
