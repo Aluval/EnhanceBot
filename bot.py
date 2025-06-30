@@ -6,6 +6,7 @@ import subprocess
 import re
 import time
 import datetime
+import psutil
 from datetime import timedelta
 from pyrogram.types import (
     Message,
@@ -169,7 +170,6 @@ async def enhance_video(client: Client, message: Message):
     os.remove(input_path)
     os.remove(output_path)
 
-
 @app.on_message(filters.command("about"))
 async def about_command(client: Client, message: Message):
     await message.reply_text(
@@ -177,15 +177,15 @@ async def about_command(client: Client, message: Message):
         "EnhanceBot is a Telegram bot built using Python and FFmpeg. It improves video quality using filters like:\n"
         "- ✅ Upscale to 1080p\n"
         "- 🎞️ Noise reduction\n"
-        - "🔧 Sharpening & color correction\n"
+        "- 🔧 Sharpening & color correction\n"
         "- 🔊 Keeps original audio & subtitles\n\n"
         "⚙️ Powered by: Pyrogram + FFmpeg\n"
-        "💡 Developer: @Aluval or [GitHub](https://github.com/Aluval)\n"
+        "💡 Developer: @Sunrises_24 or [GitHub](https://github.com/Aluval)\n"
         "📦 Max file size: 300MB\n\n"
         "Use `/enhance` by replying to a video under 300MB to start!"
     )
 
-from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+
 
 @app.on_message(filters.command("start"))
 async def start_command(client: Client, message: Message):
