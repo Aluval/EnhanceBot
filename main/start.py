@@ -1,7 +1,7 @@
 import time
 import datetime
 from datetime import timedelta
-
+from config import *
 import psutil
 from pyrogram import Client, filters
 from pyrogram.types import (
