@@ -1,0 +1,29 @@
+services:
+  - type: web
+    plan: free
+    name: PixelPulseBot
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python bot.py
+    repo: https://github.com/Aluval/PixelPulseBot.git
+    branch: SH24BOTS
+    autoDeploy: false
+    envVars:
+      - key: API_ID
+        sync: false
+      - key: API_HASH
+        sync: false
+      - key: BOT_TOKEN
+        sync: false
+      - key: ADMIN
+        value: "6469754522"
+      - key: SUNRISES_PIC
+        value: "your telegraph link"
+      - key: UPDATES_CHANNEL
+        value: "https://t.me/Sunrises24BotUpdates"
+      - key: SUPPORT_GROUP
+        value: "https://t.me/Sunrises24BotSupport"
+      - key: WEBHOOK
+        value: "true"
+      - key: PORT
+        value: "8080"
