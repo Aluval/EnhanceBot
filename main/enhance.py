@@ -5,7 +5,7 @@ import subprocess
 from pyrogram import Client, filters
 from pyrogram.types import Message
 from pyrogram.enums import ChatAction
-from main.utils import progress, humanbytes
+from main.utils import progress, humanbytes, time_formatter
 
 MAX_FILE_SIZE = 300 * 1024 * 1024  # 300MB
 
