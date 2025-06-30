@@ -1,5 +1,5 @@
 {
-  "name": "enhance-video-bot",
+  "name": "PixelPulseBot",
   "description": "Telegram bot to enhance videos using ffmpeg",
   "repository": "",
   "stack": "container",
@@ -15,6 +15,36 @@
     "BOT_TOKEN": {
       "description": "Telegram Bot Token",
       "required": true
+    },
+    "ADMIN": {
+      "description": "Admin Telegram User ID",
+      "required": true,
+      "value": "6469754522"
+    },
+    "SUNRISES_PIC": {
+      "description": "Telegraph Image URL used for branding",
+      "required": false,
+      "value": "your telegraph link"
+    },
+    "UPDATES_CHANNEL": {
+      "description": "Telegram channel link for bot updates",
+      "required": false,
+      "value": "https://t.me/Sunrises24BotUpdates"
+    },
+    "SUPPORT_GROUP": {
+      "description": "Telegram group link for support",
+      "required": false,
+      "value": "https://t.me/Sunrises24BotSupport"
+    },
+    "WEBHOOK": {
+      "description": "Whether to use webhook (true/false)",
+      "required": false,
+      "value": "true"
+    },
+    "PORT": {
+      "description": "Port to run the bot on",
+      "required": false,
+      "value": "8080"
     }
   }
 }
