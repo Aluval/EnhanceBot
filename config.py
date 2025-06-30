@@ -15,4 +15,4 @@ SUNRISES_PIC= "https://graph.org/file/bd91761f6e938e2e6d23a.jpg"  # Replace with
 UPDATES_CHANNEL = os.getenv("UPDATES_CHANNEL", "https://t.me/Sunrises24BotUpdates") # Replace with your Updates link
 SUPPORT_GROUP = os.getenv("SUPPORT_GROUP", "https://t.me/Sunrises24BotSupport") # Replace with your Support link
 WEBHOOK = bool(os.environ.get("WEBHOOK", True))
-PORT = int(os.environ.get("PORT", "8080"))
+PORT = int(os.environ.get("PORT", "8081") #for koyeb 8080 only
