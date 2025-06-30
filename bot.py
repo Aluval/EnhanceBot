@@ -5,14 +5,28 @@ import os
 import subprocess
 import re
 import time
+import datetime
+from datetime import timedelta
+from pyrogram.types import (
+    Message,
+    InlineKeyboardMarkup,
+    InlineKeyboardButton,
+    CallbackQuery
+)
 
+#ALL FILES UPLOADED - CREDITS 🌟 - @Sunrises_24
 API_ID = int(os.getenv("API_ID", "10811400"))     # Replace with your API_ID
 API_HASH = os.getenv("API_HASH", "191bf5ae7a6c39771e7b13cf4ffd1279")  # Replace with your API_HASH
 BOT_TOKEN = os.getenv("BOT_TOKEN", "7097361755:AAHJcqT4_YBvSq5hG7FwP5kDhugFBTwfRQE")  # Replace with your Bot Token
+ADMIN = int(os.environ.get("ADMIN", '6469754522'))
+#ALL FILES UPLOADED - CREDITS 🌟 - @Sunrises_24
+SUNRISES_PIC= "https://graph.org/file/bd91761f6e938e2e6d23a.jpg"  # Replace with your Telegraph link
 
 app = Client("enhance_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
 MAX_FILE_SIZE = 300 * 1024 * 1024  # 300MB
+# Define Start Time for Uptime Calculation
+START_TIME = datetime.datetime.now()
 
 # Utility: Format seconds to HH:MM:SS string
 def time_formatter(seconds: float) -> str:
@@ -151,6 +165,149 @@ async def enhance_video(client: Client, message: Message):
     # Cleanup
     os.remove(input_path)
     os.remove(output_path)
+
+
+@app.on_message(filters.command("about"))
+async def about_command(client: Client, message: Message):
+    await message.reply_text(
+        "**📽️ About EnhanceBot**\n\n"
+        "EnhanceBot is a Telegram bot built using Python and FFmpeg. It improves video quality using filters like:\n"
+        "- ✅ Upscale to 1080p\n"
+        "- 🎞️ Noise reduction\n"
+        - "🔧 Sharpening & color correction\n"
+        "- 🔊 Keeps original audio & subtitles\n\n"
+        "⚙️ Powered by: Pyrogram + FFmpeg\n"
+        "💡 Developer: @Aluval or [GitHub](https://github.com/Aluval)\n"
+        "📦 Max file size: 300MB\n\n"
+        "Use `/enhance` by replying to a video under 300MB to start!"
+    )
+
+from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+
+@app.on_message(filters.command("start"))
+async def start_command(client: Client, message: Message):
+    buttons = InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton("ℹ️ About", callback_data="about"),
+            InlineKeyboardButton("🛠 Help", callback_data="help")
+        ],
+        [
+            InlineKeyboardButton("📢 Updates", url=UPDATES_CHANNEL),
+            InlineKeyboardButton("💬 Support", url=SUPPORT_GROUP)
+        ]
+    ])
+    
+    await message.reply_photo(
+        photo=SUNRISES_PIC,  
+        caption=(
+            "**👋 Welcome to EnhanceBot!**\n\n"
+            "🔹 Send any video under **300MB**\n"
+            "🔹 Reply with `/enhance` to improve sharpness, color, and quality.\n\n"
+            "Click the buttons below to know more!"
+        ),
+        reply_markup=buttons
+    )
+
+@app.on_message(filters.command("help"))
+async def help_command(client: Client, message: Message):
+    await message.reply_text(
+       "**🛠 EnhanceBot Help**\n\n"
+            "`/start` - Welcome message\n"
+            "`/help` - Show this help\n"
+            "`/enhance` - Reply to a video to enhance it\n"
+            "`/ping` - Check bot speed\n"
+            "`/stats` - stats\n"
+            "`/logs` - (Admins only) Bot logs\n\n"
+            "**Note:** File size must be under 300MB."
+    )
+
+@app.on_callback_query()
+async def callback_handler(client, callback_query):
+    data = callback_query.data
+    if data == "about":
+        await callback_query.message.edit_text(
+            "**📽️ About EnhanceBot**\n\n"
+            "EnhanceBot uses **FFmpeg** to:\n"
+            "🔹 Upscale videos to 1080p\n"
+            "🔹 Denoise and sharpen\n"
+            "🔹 Boost brightness and saturation\n"
+            "🔹 Keep audio and subtitles intact\n\n"
+            "Built by: @Aluval\nPowered by: Pyrogram + FFmpeg",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("🔙 Back", callback_data="start")]
+            ])
+        )
+    elif data == "help":
+        await callback_query.message.edit_text(
+            "**🛠 EnhanceBot Help**\n\n"
+            "`/start` - Welcome message\n"
+            "`/help` - Show this help\n"
+            "`/enhance` - Reply to a video to enhance it\n"
+            "`/ping` - Check bot speed\n"
+            "`/stats` - stats\n"
+            "`/logs` - (Admins only) Bot logs\n\n"
+            "**Note:** File size must be under 300MB.",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("🔙 Back", callback_data="start")]
+            ])
+        )
+    elif data == "start":
+        await start_command(client, callback_query.message)
+
+
+@app.on_message(filters.command("ping"))
+async def ping(bot, msg: Message):
+    start = time.time()
+    response = await msg.reply_text("🔍 Pinging...")
+    end = time.time()
+    duration = (end - start) * 1000  # ms
+    await response.edit_text(
+        f"🏓 **Pong!**\n"
+        f"📶 **Response Time:** `{duration:.2f} ms`\n\n"
+        "✨ Powered by EnhanceBot\n"
+        "👤 Credits: @Sunrises_24"
+    )
+
+@Client.on_callback_query(filters.regex("^refresh_stats$"))
+async def refresh_stats_callback(_, query):
+    uptime = datetime.datetime.now() - START_TIME
+    uptime_str = str(timedelta(seconds=int(uptime.total_seconds())))
+
+    total_space = psutil.disk_usage('/').total / (1024 ** 3)
+    used_space = psutil.disk_usage('/').used / (1024 ** 3)
+    free_space = psutil.disk_usage('/').free / (1024 ** 3)
+
+    cpu_usage = psutil.cpu_percent()
+    ram_usage = psutil.virtual_memory().percent
+
+    stats_text = (
+        "🖥️ **EnhanceBot Server Status**\n\n"
+        f"⏱️ **Uptime:** `{uptime_str}`\n"
+        f"💾 **Disk:** `{used_space:.2f} GB / {total_space:.2f} GB`"
+        f" ({used_space / total_space * 100:.1f}%)\n"
+        f"⚙️ **CPU Usage:** `{cpu_usage:.1f}%`\n"
+        f"🧠 **RAM Usage:** `{ram_usage:.1f}%`\n"
+    )
+
+    keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton("🔄 Refresh", callback_data="refresh_stats")],
+        [InlineKeyboardButton("📢 UPDATES", url=UPDATES_CHANNEL)],
+        [InlineKeyboardButton("💬 Support", url=SUPPORT_GROUP)]
+    ])
+
+    await msg.reply_photo(
+        photo=SUNRISES_PIC,
+        caption=stats_text,
+        reply_markup=keyboard
+    )
+
+# 🔒 Admin-only /logs Command
+@Client.on_message(filters.command('logs') & filters.user(ADMIN))
+async def log_file(_, m: Message):
+    try:
+        await m.reply_document("SunrisesBot.txt", caption="📄 Bot Logs File")
+    except Exception as e:
+        await m.reply(f"❌ Error: `{str(e)}`")
 
 if __name__ == "__main__":
     app.run()
