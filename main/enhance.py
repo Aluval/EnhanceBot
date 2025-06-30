@@ -4,7 +4,7 @@ import re
 import subprocess
 from pyrogram import Client, filters
 from pyrogram.types import Message, ChatAction
-from main.utils import progress_message, humanbytes
+from main.utils import progress, humanbytes
 
 MAX_FILE_SIZE = 300 * 1024 * 1024  # 300MB
 
