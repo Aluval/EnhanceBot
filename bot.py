@@ -270,9 +270,9 @@ async def ping(bot, msg: Message):
         "✨ Powered by EnhanceBot\n"
         "👤 Credits: @Sunrises_24"
     )
-
-@Client.on_callback_query(filters.regex("^refresh_stats$"))
-async def refresh_stats_callback(_, query):
+# 🟢 /stats Command
+@app.on_message(filters.command("stats"))
+async def stats_command(_, msg: Message):
     uptime = datetime.datetime.now() - START_TIME
     uptime_str = str(timedelta(seconds=int(uptime.total_seconds())))
 
@@ -286,8 +286,8 @@ async def refresh_stats_callback(_, query):
     stats_text = (
         "🖥️ **EnhanceBot Server Status**\n\n"
         f"⏱️ **Uptime:** `{uptime_str}`\n"
-        f"💾 **Disk:** `{used_space:.2f} GB / {total_space:.2f} GB`"
-        f" ({used_space / total_space * 100:.1f}%)\n"
+        f"💾 **Disk:** `{used_space:.2f} GB / {total_space:.2f} GB` "
+        f"({used_space / total_space * 100:.1f}%)\n"
         f"⚙️ **CPU Usage:** `{cpu_usage:.1f}%`\n"
         f"🧠 **RAM Usage:** `{ram_usage:.1f}%`\n"
     )
@@ -304,8 +304,43 @@ async def refresh_stats_callback(_, query):
         reply_markup=keyboard
     )
 
+
+# 🔁 /stats Refresh Handler
+@app.on_callback_query(filters.regex("^refresh_stats$"))
+async def refresh_stats_callback(_, query: CallbackQuery):
+    uptime = datetime.datetime.now() - START_TIME
+    uptime_str = str(timedelta(seconds=int(uptime.total_seconds())))
+
+    total_space = psutil.disk_usage('/').total / (1024 ** 3)
+    used_space = psutil.disk_usage('/').used / (1024 ** 3)
+    free_space = psutil.disk_usage('/').free / (1024 ** 3)
+
+    cpu_usage = psutil.cpu_percent()
+    ram_usage = psutil.virtual_memory().percent
+
+    stats_text = (
+        "🖥️ **EnhanceBot Server Status**\n\n"
+        f"⏱️ **Uptime:** `{uptime_str}`\n"
+        f"💾 **Disk:** `{used_space:.2f} GB / {total_space:.2f} GB` "
+        f"({used_space / total_space * 100:.1f}%)\n"
+        f"⚙️ **CPU Usage:** `{cpu_usage:.1f}%`\n"
+        f"🧠 **RAM Usage:** `{ram_usage:.1f}%`\n"
+    )
+
+    keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton("🔄 Refresh", callback_data="refresh_stats")],
+        [InlineKeyboardButton("📢 UPDATES", url=UPDATES_CHANNEL)],
+        [InlineKeyboardButton("💬 Support", url=SUPPORT_GROUP)]
+    ])
+
+    await query.message.edit_caption(
+        caption=stats_text,
+        reply_markup=keyboard
+    )
+
+
 # 🔒 Admin-only /logs Command
-@Client.on_message(filters.command('logs') & filters.user(ADMIN))
+@app.on_message(filters.command('logs') & filters.user(ADMIN))
 async def log_file(_, m: Message):
     try:
         await m.reply_document("SunrisesBot.txt", caption="📄 Bot Logs File")
