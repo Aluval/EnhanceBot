@@ -13,8 +13,8 @@ from main.utils import progress, humanbytes, time_formatter
 # Temporary user settings (use a database for persistent storage)
 user_compression_settings = {}
 DEFAULT_PERCENT = 75
+MAX_FILE_SIZE = 2 * 1024 * 1024 * 1024  # 2 GB in bytes
 
-from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 #ALL FILES UPLOADED - CREDITS 🌟 - @Sunrises_24
 @Client.on_message(filters.command("compress_settings"))
