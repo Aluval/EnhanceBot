@@ -57,8 +57,8 @@ A minimal, high-performance Telegram bot that lets users **enhance** (1080p upsc
 |----------------------|--------------------------------------------------|
 | `/start`             | Sends welcome message with inline buttons        |
 | `/help`              | Shows full command usage                         |
-| `/enhance`           | Enhance video (reply to video under 2GB)         |
-| `/compress`          | Compress video to reduce size                    |
+| `/enhance`           | Enhance video (reply to video under 300MB)       |
+| `/compress`          | Compress video to reduce size (video under 2GB)  |
 | `/compress_settings` | Adjust quality level (e.g., 75%)                 |
 | `/ping`              | Check bot speed                                  |
 | `/stats`             | Server usage stats: CPU, RAM, Disk, Uptime       |
