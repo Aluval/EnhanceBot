@@ -18,6 +18,8 @@ logging.basicConfig(
     level=logging.INFO
 )
 
+#ALL FILES UPLOADED - CREDITS 🌟 - @Sunrises_24
+
 # Example of logging a message
 logging.info('Bot started successfully!')
 # Define Start Time for Uptime Calculation
@@ -40,7 +42,8 @@ async def start_command(client: Client, message: Message):
         photo=SUNRISES_PIC,  
         caption=(
             "**👋 Welcome to PixelPulseBot!**\n\n"
-            "🔹 Send any video under **2GB**\n"
+            "🔹 Send any video under **300MB** for enhance\n"
+            "🔹 Send any video under **2GB** for compress\n"
             "🔹 Reply with `/enhance` to improve sharpness, color, and quality.\n"
             "🔹 Reply with `/compress` to reduce file size (choose quality via `/compress_settings`).\n\n"
             "Click the buttons below to know more!"
@@ -60,6 +63,7 @@ async def help_command(client: Client, message: Message):
         "`/ping` - Check bot speed\n"
         "`/stats` - Server usage stats\n"
         "`/logs` - (Admins only) Bot logs\n\n"
+        "**Note:** File size must be under 300MB for enhance."
         "**Note:** File size must be under 2GB for compression."
     )
 
@@ -91,6 +95,7 @@ async def callback_handler(client, callback_query):
             "`/ping` - Check bot speed\n"
             "`/stats` - Server usage stats\n"
             "`/logs` - (Admins only) Bot logs\n\n"
+            "**Note:** File size must be under 300MB for enhance.
             "**Note:** File size must be under 2GB for compression.",
             reply_markup=InlineKeyboardMarkup([
                 [InlineKeyboardButton("🔙 Back", callback_data="start")]
