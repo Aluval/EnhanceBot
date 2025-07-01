@@ -64,7 +64,8 @@ A minimal, high-performance Telegram bot that lets users **enhance** (1080p upsc
 | `/stats`             | Server usage stats: CPU, RAM, Disk, Uptime       |
 | `/logs`              | Admin-only: download `PixelPulseBot.txt` logs    |
 
-📝 **Note:** 1) Bot supports enhance videos up to **300MB** only!\n2) Bot supports compression videos up to **2GB** only!
+📝 **Note:** 1) Bot supports enhance videos up to **300MB** only!
+             2) Bot supports compression videos up to **2GB** only!
 
 ---
 
