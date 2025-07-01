@@ -18,7 +18,9 @@ services:
       - key: ADMIN
         value: "6469754522"
       - key: SUNRISES_PIC
-        value: "your telegraph link"
+        value: "your start telegraph link"
+      - key: INFO_PIC
+        value: "your information telegraph link"
       - key: UPDATES_CHANNEL
         value: "https://t.me/Sunrises24BotUpdates"
       - key: SUPPORT_GROUP
