@@ -22,7 +22,12 @@
       "value": "6469754522"
     },
     "SUNRISES_PIC": {
-      "description": "Telegraph Image URL used for branding",
+      "description": "Telegraph Image URL used for branding - Start Pic",
+      "required": false,
+      "value": "your telegraph link"
+    },
+    "INFO_PIC": {
+      "description": "Telegraph Image URL used for branding - Information",
       "required": false,
       "value": "your telegraph link"
     },
