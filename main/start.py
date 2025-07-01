@@ -161,7 +161,7 @@ async def stats_command(_, msg: Message):
     ])
 
     await msg.reply_photo(
-        photo=SUNRISES_PIC,
+        photo=INFO_PIC,
         caption=stats_message,
         reply_markup=keyboard
     )
