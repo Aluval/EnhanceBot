@@ -2,7 +2,7 @@ import os
 import time
 import re
 import subprocess
-
+from config import *
 from pyrogram import Client, filters
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 from pyrogram.enums import ChatAction
@@ -25,7 +25,12 @@ async def compress_settings(client: Client, message: Message):
         [InlineKeyboardButton("🔻 75%", callback_data="set_compress_75")],
         [InlineKeyboardButton("🔻 90%", callback_data="set_compress_90")]
     ])
-    await message.reply("🔧 Choose your default compression percentage:", reply_markup=keyboard)
+    
+    await message.reply_photo(
+        photo=INFO_PIC,
+        caption="🔧 Choose your default compression percentage:",
+        reply_markup=keyboard
+    )
 
 @Client.on_callback_query(filters.regex("set_compress_"))
 async def set_compression_percentage(client, callback_query):
