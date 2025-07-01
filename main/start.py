@@ -63,7 +63,7 @@ async def help_command(client: Client, message: Message):
         "`/ping` - Check bot speed\n"
         "`/stats` - Server usage stats\n"
         "`/logs` - (Admins only) Bot logs\n\n"
-        "**Note:** File size must be under 300MB for enhance."
+        "**Note:** File size must be under 300MB for enhance.\n"
         "**Note:** File size must be under 2GB for compression."
     )
 
@@ -95,7 +95,7 @@ async def callback_handler(client, callback_query):
             "`/ping` - Check bot speed\n"
             "`/stats` - Server usage stats\n"
             "`/logs` - (Admins only) Bot logs\n\n"
-            "**Note:** File size must be under 300MB for enhance.
+            "**Note:** File size must be under 300MB for enhance.\n"
             "**Note:** File size must be under 2GB for compression.",
             reply_markup=InlineKeyboardMarkup([
                 [InlineKeyboardButton("🔙 Back", callback_data="start")]
