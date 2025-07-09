@@ -2,8 +2,8 @@
 
 from pymongo import MongoClient
 import time
+from config import MONGO_URL
 
-MONGO_URL = "mongodb+srv://HARSHA24:HARSHA24@cluster0.sxaj8up.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
 client = MongoClient(MONGO_URL)
 db = client["rename_bot"]
 
