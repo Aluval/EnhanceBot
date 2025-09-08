@@ -12,7 +12,7 @@
 A minimal, high-performance Telegram bot that lets users **enhance** (1080p upscale, sharpen, denoise, color correct) and **compress** videos — using smart presets and FFmpeg filters.
 
 <p align="center">
-  <img src="https://envs.sh/.jpg/.jpg" height="250" alt="PixelPulseBot">
+  <img src="https://envs.sh/big.jpg" height="250" alt="PixelPulseBot">
 </p>
 
 ---
