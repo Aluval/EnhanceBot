@@ -12,7 +12,7 @@ BOT_TOKEN = os.environ.get("BOT_TOKEN", "7871689536:AAGjSkOtVe4iMWR8IegoylE9qfaD
 ADMIN = int(os.environ.get("ADMIN", '6469754522'))
 #ALL FILES UPLOADED - CREDITS 🌟 - @Sunrises_24
 SUNRISES_PIC= "https://envs.sh/big.jpg" # Replace with your Telegraph link - Start Pic
-INFO_PIC= "https://envs.sh/biM.jpg" # Replace with your Telegraph link - Information 
+INFO_PIC= "https://envs.sh/ZUs.jpg" # Replace with your Telegraph link - Information 
 UPDATES_CHANNEL = os.getenv("UPDATES_CHANNEL", "https://t.me/Sunrises24BotUpdates") # Replace with your Updates link
 SUPPORT_GROUP = os.getenv("SUPPORT_GROUP", "https://t.me/Sunrises24BotSupport") # Replace with your Support link
 WEBHOOK = bool(os.environ.get("WEBHOOK", True))
