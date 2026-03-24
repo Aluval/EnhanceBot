@@ -53,6 +53,74 @@ async def start_command(client: Client, message: Message):
         reply_markup=buttons
     )
 
+@Client.on_callback_query()
+async def callback_handler(client, callback_query):
+    data = callback_query.data
+
+    buttons = InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton("ℹ️ About", callback_data="about"),
+            InlineKeyboardButton("🛠 Help", callback_data="help")
+        ],
+        [
+            InlineKeyboardButton("📢 Updates", url=UPDATES_CHANNEL),
+            InlineKeyboardButton("💬 Support", url=SUPPORT_GROUP)
+        ]
+    ])
+
+    if data == "about":
+        await callback_query.message.edit_caption(
+            caption=(
+                "**🎩 About PixelPulseBot**\n\n"
+                "PixelPulseBot is a high-performance Telegram bot powered by FFmpeg.\n\n"
+                "**🚀 Features:**\n"
+                "🔹 1080p video enhancement\n"
+                "🔹 Denoise & sharpening\n"
+                "🔹 Color correction\n"
+                "🔹 Fast compression (x265)\n"
+                "🔹 Output as file (no quality loss)\n"
+                "🔹 Metadata tagging\n\n"
+                "🧑‍💻 Dev: @Sunrises_24\n"
+                "⚡ Powered by Pyrogram + FFmpeg"
+            ),
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("🔙 Back", callback_data="start")]
+            ])
+        )
+
+    elif data == "help":
+        await callback_query.message.edit_caption(
+            caption=(
+                "**🛠 PixelPulseBot Help**\n\n"
+                "`/enhance` → Improve quality\n"
+                "`/compress` → Reduce size\n\n"
+                "**📌 Limits:**\n"
+                "Enhance: 300MB\n"
+                "Compress: 2GB\n\n"
+                "⚡ Fast + Stable + Clean Output"
+            ),
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("🔙 Back", callback_data="start")]
+            ])
+        )
+
+    elif data == "start":
+        await callback_query.message.edit_caption(
+            caption=(
+                "**👋 Welcome to PixelPulseBot!**\n\n"
+                "🔹 Enhance videos under **300MB**\n"
+                "🔹 Compress videos up to **2GB**\n\n"
+                "⚡ Commands:\n"
+                "• `/enhance` → 1080p upscale + filters\n"
+                "• `/compress` → reduce size (fast x265)\n\n"
+                "📦 Output sent as **file (no Telegram compression)**\n"
+                "🏷 Metadata added automatically\n\n"
+                "Click below to explore more 👇"
+            ),
+            reply_markup=buttons
+        )
+
+    await callback_query.answer()
 
 # 🛠 HELP
 @Client.on_message(filters.command("help"))
