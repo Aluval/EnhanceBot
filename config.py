@@ -8,7 +8,7 @@ id_pattern = re.compile(r'^.\d+$')
 
 API_ID = os.environ.get("API_ID", "10811400")
 API_HASH = os.environ.get("API_HASH", "191bf5ae7a6c39771e7b13cf4ffd1279")
-BOT_TOKEN = os.environ.get("BOT_TOKEN", "7871689536:AAFFnu67hEP6ZXVWD4SMGMl9dekw_pzidOE")
+BOT_TOKEN = os.environ.get("BOT_TOKEN", "7871689536:AAGkyq2aunraV9EtHkvnHkreN9EtPHrPLx8")
 ADMIN = int(os.environ.get("ADMIN", '6469754522'))
 #ALL FILES UPLOADED - CREDITS 🌟 - @Sunrises_24
 SUNRISES_PIC= "https://envs.sh/big.jpg" # Replace with your Telegraph link - Start Pic
