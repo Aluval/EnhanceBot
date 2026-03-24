@@ -9,7 +9,7 @@
 
 ### 🌟 What is PixelPulseBot?
 
-A minimal, high-performance Telegram bot that lets users **enhance** (1080p upscale, sharpen, denoise, color correct) and **compress** videos — using smart presets and FFmpeg filters.
+A minimal, high-performance Telegram bot that lets users **enhance** (1080p upscale, sharpen, denoise, color correct) and **compress** videos — using fast FFmpeg presets and optimized encoding.
 
 <p align="center">
   <img src="https://envs.sh/big.jpg" height="250" alt="PixelPulseBot">
@@ -27,7 +27,7 @@ A minimal, high-performance Telegram bot that lets users **enhance** (1080p upsc
   "BOT_TOKEN": "Telegram Bot Token",
   "ADMIN": "6469754522",
   "SUNRISES_PIC": "Telegraph Image URL used for branding - start",
-  "INFO_PIC": "Telegraph Image URL used for branding - information",
+  "INFO_PIC": "Telegraph Image URL used for branding - stats",
   "UPDATES_CHANNEL": "https://t.me/Sunrises24BotUpdates",
   "SUPPORT_GROUP": "https://t.me/Sunrises24BotSupport",
   "WEBHOOK": "true",
@@ -39,42 +39,52 @@ A minimal, high-performance Telegram bot that lets users **enhance** (1080p upsc
 
 ---
 
-### 🔧 Features at a Glance
+## 🔧 Features at a Glance
 
-- ✅ **1080p Upscale** – FFmpeg AI-enhance filters
-- ✅ **Noise Reduction** – For cleaner visuals
-- ✅ **Sharpen & Color Boost**
-- ✅ **Compress** – With `/compress_settings` (50/60/75/90%)
-- ✅ **Preserve Audio & Subtitles**
-- ✅ **Uptime & Stats Panel**
-- ✅ **Photo Branding with Telegraph Image**
-
----
-
-### 🛠 Bot Commands
-
-| Command              | Description                                      |
-|----------------------|--------------------------------------------------|
-| `/start`             | Sends welcome message with inline buttons        |
-| `/help`              | Shows full command usage                         |
-| `/enhance`           | Enhance video (reply to video under 300MB)       |
-| `/compress`          | Compress video to reduce size (video under 2GB)  |
-| `/compress_settings` | Adjust quality level (e.g., 75%)                 |
-| `/ping`              | Check bot speed                                  |
-| `/stats`             | Server usage stats: CPU, RAM, Disk, Uptime       |
-| `/logs`              | Admin-only: download `PixelPulseBot.txt` logs    |
-
-📝 **Note:**  
-1️⃣ Bot supports enhance videos up to **300MB** only!  
-2️⃣ Bot supports compression videos up to **2GB** only!
+- ✅ **1080p Upscale** – High-quality FFmpeg filters  
+- ✅ **Denoise & Sharpen** – Cleaner and sharper visuals  
+- ✅ **Color Enhancement** – Better contrast & saturation  
+- ✅ **Fast Compression (x265)** – Danish-style encoding ⚡  
+- ✅ **Live Progress + ETA**  
+- ✅ **Supports Video & Document**  
+- ✅ **Output as File (No Telegram Recompression)**  
+- ✅ **Metadata Tagging**  
+  - 🎬 Video → `@Sunrises24BotUpdates`  
+  - 🔊 Audio → `@Sunrises_24`  
+- ✅ **Server Stats Panel** (CPU, RAM, Disk, Uptime)  
 
 ---
 
-### 🎩 About
+## 🛠 Bot Commands
 
-> `PixelPulseBot` is engineered for video perfection using smart FFmpeg presets.  
-> Enhance like a pro, compress without losing clarity, and stay visually stunning — all within Telegram.
+| Command     | Description                                      |
+|------------|--------------------------------------------------|
+| `/start`   | Start the bot with welcome UI                    |
+| `/help`    | Show available commands                          |
+| `/enhance` | Enhance video (reply, max 300MB)                 |
+| `/compress`| Compress video (reply, max 2GB)                  |
+| `/ping`    | Check bot response time                          |
+| `/stats`   | Server stats (CPU, RAM, Disk, Uptime)            |
+| `/logs`    | Admin only - download logs                       |
 
+---
+
+## 📌 Limits
+
+- 🎬 **Enhance** → 300MB max  
+- 📦 **Compress** → 2GB max  
+
+---
+
+## 🎩 About
+
+PixelPulseBot is engineered for high-performance video processing using FFmpeg.
+
+- 🚀 Enhance videos to 1080p with cinematic filters  
+- ⚡ Compress using fast x265 encoding  
+- 📦 Send output as document (no quality loss)  
+- 🏷 Automatically applies metadata
+  
 Developed with ❤️ by [@Sunrises_24](https://t.me/Sunrises_24)  
 Powered by **Pyrogram + FFmpeg**  
 Maintained via: [@Sunrises24BotUpdates](https://t.me/Sunrises24BotUpdates)
