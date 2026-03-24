@@ -21,8 +21,10 @@ async def compress_video(client: Client, message: Message):
     # ✅ SUPPORT VIDEO + DOCUMENT
     if reply.video:
         media = reply.video
+        file_name = reply.video.file_name or "video.mp4"
     elif reply.document and reply.document.mime_type.startswith("video"):
         media = reply.document
+        file_name = reply.document.file_name or "video.mkv"
     else:
         return await message.reply("❌ Reply to a video or video document with /compress")
 
@@ -36,16 +38,18 @@ async def compress_video(client: Client, message: Message):
             f"🚫 Limit: 2GB"
         )
 
+    # ❌ SKIP IF ALREADY COMPRESSED
+    if "compressed" in file_name.lower():
+        return await message.reply("⚠️ This file already looks compressed 😑")
+
     start = time.time()
 
-    # ⬇️ DOWNLOAD (LIVE)
+    # ⬇️ DOWNLOAD
     downloading = await message.reply("⬇️ Downloading video...")
-
     input_path = await reply.download(
         progress=progress,
         progress_args=(downloading, file_size, downloading, start)
     )
-
     await downloading.delete()
 
     if not os.path.exists(input_path):
@@ -63,22 +67,30 @@ async def compress_video(client: Client, message: Message):
     except:
         total_duration = 0
 
+    # 📁 OUTPUT NAME
     output_path = "compressed.mkv"
 
     processing_msg = await message.reply("⚡ Compressing video...")
 
-    # 🔥 DANISH FFmpeg
+    # 🔥 DANISH FFmpeg + METADATA
     cmd = [
         "ffmpeg", "-i", input_path,
         "-preset", "ultrafast",
         "-c:v", "libx265",
         "-crf", "27",
+
+        # 🎬 METADATA
+        "-metadata", "title=@Sunrises24BotUpdates",
+        "-metadata:s:v", "title=@Sunrises24BotUpdates",
+        "-metadata:s:a", "title=@Sunrises_24",
+
         "-map", "0:v",
         "-c:a", "aac",
         "-b:a", "128k",
         "-map", "0:a",
         "-c:s", "copy",
         "-map", "0:s?",
+
         "-y", output_path
     ]
 
@@ -130,17 +142,20 @@ async def compress_video(client: Client, message: Message):
     compressed = os.path.getsize(output_path)
     reduction = 100 - ((compressed / original) * 100)
 
-    # ⬆️ UPLOAD
-    upload_msg = await message.reply("⬆️ Uploading compressed video...")
-    await client.send_chat_action(message.chat.id, ChatAction.UPLOAD_VIDEO)
+    # ⬆️ UPLOAD AS DOCUMENT
+    upload_msg = await message.reply("⬆️ Uploading compressed file...")
+    await client.send_chat_action(message.chat.id, ChatAction.UPLOAD_DOCUMENT)
 
-    await message.reply_video(
-        video=output_path,
+    await message.reply_document(
+        document=output_path,
+        file_name=f"{os.path.splitext(file_name)[0]}_compressed.mkv",
         caption=(
             f"✅ Compression Done\n\n"
             f"📦 Original: {humanbytes(original)}\n"
             f"📉 Compressed: {humanbytes(compressed)}\n"
             f"📊 Reduced: {reduction:.2f}%\n\n"
+            f"🎬 Video: @Sunrises24BotUpdates\n"
+            f"🔊 Audio: @Sunrises_24\n"
             f"⚡ PixelPulseBot"
         ),
         progress=progress,
@@ -154,6 +169,6 @@ async def compress_video(client: Client, message: Message):
     os.remove(output_path)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     app = Client("my_bot", bot_token=BOT_TOKEN)
     app.run()
