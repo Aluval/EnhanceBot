@@ -145,47 +145,6 @@ async def help_command(client: Client, message: Message):
     )
 
 
-# 🔘 CALLBACKS
-@Client.on_callback_query()
-async def callback_handler(client, callback_query):
-    data = callback_query.data
-
-    if data == "about":
-        await callback_query.message.edit_text(
-            "**🎩 About PixelPulseBot**\n\n"
-            "PixelPulseBot is a high-performance Telegram bot powered by FFmpeg.\n\n"
-            "**🚀 Features:**\n"
-            "🔹 1080p video enhancement\n"
-            "🔹 Denoise & sharpening\n"
-            "🔹 Color correction\n"
-            "🔹 Fast compression (x265)\n"
-            "🔹 Output as file (no quality loss)\n"
-            "🔹 Metadata tagging\n\n"
-            "🧑‍💻 Dev: @Sunrises_24\n"
-            "⚡ Powered by Pyrogram + FFmpeg",
-            reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("🔙 Back", callback_data="start")]
-            ])
-        )
-
-    elif data == "help":
-        await callback_query.message.edit_text(
-            "**🛠 PixelPulseBot Help**\n\n"
-            "`/enhance` → Improve quality\n"
-            "`/compress` → Reduce size\n\n"
-            "**📌 Limits:**\n"
-            "Enhance: 300MB\n"
-            "Compress: 2GB\n\n"
-            "⚡ Fast + Stable + Clean Output",
-            reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("🔙 Back", callback_data="start")]
-            ])
-        )
-
-    elif data == "start":
-        await start_command(client, callback_query.message)
-
-
 # 📘 ABOUT COMMAND
 @Client.on_message(filters.command("about"))
 async def about_command(client: Client, message: Message):
