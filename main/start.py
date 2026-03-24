@@ -150,39 +150,94 @@ async def ping(bot, msg: Message):
     )
 
 
-# 📊 STATS
+# 🟢 /stats Command
+
 @Client.on_message(filters.command("stats"))
 async def stats_command(_, msg: Message):
     uptime = datetime.datetime.now() - START_TIME
     uptime_str = str(timedelta(seconds=int(uptime.total_seconds())))
 
-    total = psutil.disk_usage('/').total / (1024 ** 3)
-    used = psutil.disk_usage('/').used / (1024 ** 3)
-    free = psutil.disk_usage('/').free / (1024 ** 3)
+    total_space = psutil.disk_usage('/').total / (1024 ** 3)
+    used_space = psutil.disk_usage('/').used / (1024 ** 3)
+    free_space = psutil.disk_usage('/').free / (1024 ** 3)
 
-    cpu = psutil.cpu_percent()
-    ram = psutil.virtual_memory().percent
+    cpu_usage = psutil.cpu_percent()
+    ram_usage = psutil.virtual_memory().percent
 
-    text = (
-        f"📊 **Server Stats**\n\n"
-        f"⏳ Uptime: `{uptime_str}`\n"
-        f"💾 Total: `{total:.2f} GB`\n"
-        f"📂 Used: `{used:.2f} GB`\n"
-        f"📁 Free: `{free:.2f} GB`\n"
-        f"⚙️ CPU: `{cpu}%`\n"
-        f"💻 RAM: `{ram}%`"
+    stats_message = (
+        f"📊 **Server Stats** 📊\n\n"
+        f"⏳ **Uptime:** `{uptime_str}`\n"
+        f"💾 **Total Space:** `{total_space:.2f} GB`\n"
+        f"📂 **Used Space:** `{used_space:.2f} GB` ({used_space / total_space * 100:.1f}%)\n"
+        f"📁 **Free Space:** `{free_space:.2f} GB`\n"
+        f"⚙️ **CPU Usage:** `{cpu_usage:.1f}%`\n"
+        f"💻 **RAM Usage:** `{ram_usage:.1f}%`\n"
     )
 
-    await msg.reply_photo(photo=INFO_PIC, caption=text)
+    keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton("🔄 Refresh", callback_data="refresh_stats")],
+        [
+            InlineKeyboardButton("📢 Updates", url=UPDATES_CHANNEL),
+            InlineKeyboardButton("💬 Support", url=SUPPORT_GROUP)
+        ]
+    ])
+
+    await msg.reply_photo(
+        photo=INFO_PIC,
+        caption=stats_message,
+        reply_markup=keyboard
+    )
 
 
-# 🔒 LOGS
+@Client.on_callback_query(filters.regex("^refresh_stats$"))
+async def refresh_stats_callback(_, callback_query: CallbackQuery):
+    uptime = datetime.datetime.now() - START_TIME
+    uptime_str = str(timedelta(seconds=int(uptime.total_seconds())))
+
+    total_space = psutil.disk_usage('/').total / (1024 ** 3)
+    used_space = psutil.disk_usage('/').used / (1024 ** 3)
+    free_space = psutil.disk_usage('/').free / (1024 ** 3)
+
+    cpu_usage = psutil.cpu_percent()
+    ram_usage = psutil.virtual_memory().percent
+
+    stats_message = (
+        f"📊 **Server Stats** 📊\n\n"
+        f"⏳ **Uptime:** `{uptime_str}`\n"
+        f"💾 **Total Space:** `{total_space:.2f} GB`\n"
+        f"📂 **Used Space:** `{used_space:.2f} GB` ({used_space / total_space * 100:.1f}%)\n"
+        f"📁 **Free Space:** `{free_space:.2f} GB`\n"
+        f"⚙️ **CPU Usage:** `{cpu_usage:.1f}%`\n"
+        f"💻 **RAM Usage:** `{ram_usage:.1f}%`\n"
+    )
+
+    keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton("🔄 Refresh", callback_data="refresh_stats")],
+        [
+            InlineKeyboardButton("📢 Updates", url=UPDATES_CHANNEL),
+            InlineKeyboardButton("💬 Support", url=SUPPORT_GROUP)
+        ]
+    ])
+
+    try:
+        await callback_query.message.edit_caption(
+            caption=stats_message,
+            reply_markup=keyboard
+        )
+        await callback_query.answer("✅ Stats refreshed!")
+    except Exception as e:
+        await callback_query.answer("⚠️ Could not refresh.", show_alert=True)
+        print(f"Error refreshing stats: {e}")
+
+
+# 🔒 Admin-only /logs Command
+
 @Client.on_message(filters.command('logs') & filters.user(ADMIN))
 async def log_file(_, m: Message):
     try:
-        await m.reply_document("PixelPulseBot.txt")
+        await m.reply_document("PixelPulseBot.txt", caption="📄 Bot Logs File")
     except Exception as e:
-        await m.reply(f"❌ {str(e)}")
+        await m.reply(f"❌ Error: {str(e)}")
 
 
 if __name__ == '__main__':
