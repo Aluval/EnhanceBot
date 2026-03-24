@@ -2,7 +2,6 @@ import os
 import time
 import re
 import subprocess
-import glob
 
 from pyrogram import Client, filters
 from pyrogram.types import Message
@@ -136,24 +135,9 @@ async def enhance_video(client: Client, message: Message):
         os.remove(input_path)
         return await message.reply("❌ Enhancement failed")
 
-    # 📸 SCREENSHOTS (5)
-    ss_folder = "screenshots"
-    os.makedirs(ss_folder, exist_ok=True)
-
-    ss_cmd = [
-        "ffmpeg", "-i", output_path,
-        "-vf", "fps=1",
-        "-vframes", "5",
-        f"{ss_folder}/shot_%02d.jpg"
-    ]
-    subprocess.run(ss_cmd)
-
-    shots = sorted(glob.glob(f"{ss_folder}/*.jpg"))
-
-    if shots:
-        await message.reply_media_group([
-            {"type": "photo", "media": shot} for shot in shots
-        ])
+    if not os.path.exists(output_path):
+        os.remove(input_path)
+        return await message.reply("❌ Output file missing")
 
     # 📊 SIZE
     original = os.path.getsize(input_path)
@@ -183,10 +167,6 @@ async def enhance_video(client: Client, message: Message):
     # 🧹 CLEANUP
     os.remove(input_path)
     os.remove(output_path)
-
-    for f in shots:
-        os.remove(f)
-    os.rmdir(ss_folder)
 
 
 if __name__ == "__main__":
