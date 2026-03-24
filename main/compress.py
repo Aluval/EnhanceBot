@@ -16,11 +16,17 @@ MAX_FILE_SIZE = 2 * 1024 * 1024 * 1024  # 2GB
 @Client.on_message(filters.command("compress") & filters.reply)
 async def compress_video(client: Client, message: Message):
 
-    if not message.reply_to_message or not message.reply_to_message.video:
-        return await message.reply("❌ Reply to a video with /compress")
+    reply = message.reply_to_message
 
-    video_msg = message.reply_to_message
-    file_size = video_msg.video.file_size
+    # ✅ SUPPORT VIDEO + DOCUMENT
+    if reply.video:
+        media = reply.video
+    elif reply.document and reply.document.mime_type.startswith("video"):
+        media = reply.document
+    else:
+        return await message.reply("❌ Reply to a video or video document with /compress")
+
+    file_size = media.file_size
 
     # 🚫 SIZE CHECK
     if file_size > MAX_FILE_SIZE:
@@ -35,7 +41,7 @@ async def compress_video(client: Client, message: Message):
     # ⬇️ DOWNLOAD (LIVE)
     downloading = await message.reply("⬇️ Downloading video...")
 
-    input_path = await video_msg.download(
+    input_path = await reply.download(
         progress=progress,
         progress_args=(downloading, file_size, downloading, start)
     )
@@ -45,7 +51,7 @@ async def compress_video(client: Client, message: Message):
     if not os.path.exists(input_path):
         return await message.reply("❌ Download failed")
 
-    # 🎬 GET DURATION (FOR PROGRESS)
+    # 🎬 GET DURATION
     try:
         duration_cmd = [
             "ffprobe", "-v", "error",
@@ -83,7 +89,7 @@ async def compress_video(client: Client, message: Message):
         text=True
     )
 
-    # 🔥 YOUR LIVE PROGRESS LOGIC
+    # 🔥 LIVE PROGRESS
     time_pattern = re.compile(r'time=(\d+):(\d+):(\d+).(\d+)')
     last_percent = -1
     start_time = time.time()
@@ -124,7 +130,7 @@ async def compress_video(client: Client, message: Message):
     compressed = os.path.getsize(output_path)
     reduction = 100 - ((compressed / original) * 100)
 
-    # ⬆️ UPLOAD (LIVE)
+    # ⬆️ UPLOAD
     upload_msg = await message.reply("⬆️ Uploading compressed video...")
     await client.send_chat_action(message.chat.id, ChatAction.UPLOAD_VIDEO)
 
