@@ -1,24 +1,17 @@
 import os
 import time
+import re
 import subprocess
 
 from pyrogram import Client, filters
 from pyrogram.types import Message
 from pyrogram.enums import ChatAction
 
-# Your config
 from config import *
-
-# Your utility functions
 from main.utils import progress, humanbytes, time_formatter
 
-# Mediainfo function (IMPORTANT)
-from main.utils import info
+MAX_FILE_SIZE = 2 * 1024 * 1024 * 1024  # 2GB
 
-MAX_FILE_SIZE = 2 * 1024 * 1024 * 1024  # 2 GB in bytes
-
-
-#ALL FILES UPLOADED - CREDITS 🌟 - @Sunrises_24
 
 @Client.on_message(filters.command("compress") & filters.reply)
 async def compress_video(client: Client, message: Message):
@@ -29,25 +22,46 @@ async def compress_video(client: Client, message: Message):
     video_msg = message.reply_to_message
     file_size = video_msg.video.file_size
 
+    # 🚫 SIZE CHECK
     if file_size > MAX_FILE_SIZE:
-        return await message.reply("❌ File exceeds 2GB limit")
+        return await message.reply(
+            f"❌ File too large!\n\n"
+            f"📦 Size: {humanbytes(file_size)}\n"
+            f"🚫 Limit: 2GB"
+        )
 
     start = time.time()
-    downloading = await message.reply("⬇️ Downloading...")
+
+    # ⬇️ DOWNLOAD (LIVE)
+    downloading = await message.reply("⬇️ Downloading video...")
 
     input_path = await video_msg.download(
         progress=progress,
         progress_args=(downloading, file_size, downloading, start)
     )
+
     await downloading.delete()
 
     if not os.path.exists(input_path):
         return await message.reply("❌ Download failed")
 
+    # 🎬 GET DURATION (FOR PROGRESS)
+    try:
+        duration_cmd = [
+            "ffprobe", "-v", "error",
+            "-show_entries", "format=duration",
+            "-of", "default=noprint_wrappers=1:nokey=1",
+            input_path
+        ]
+        total_duration = float(subprocess.check_output(duration_cmd).decode().strip())
+    except:
+        total_duration = 0
+
     output_path = "compressed.mkv"
 
-    processing_msg = await message.reply("⚡ Fast Compressing...")
+    processing_msg = await message.reply("⚡ Compressing video...")
 
+    # 🔥 DANISH FFmpeg
     cmd = [
         "ffmpeg", "-i", input_path,
         "-preset", "ultrafast",
@@ -62,12 +76,42 @@ async def compress_video(client: Client, message: Message):
         "-y", output_path
     ]
 
-    process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+    process = subprocess.Popen(
+        cmd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True
+    )
+
+    # 🔥 YOUR LIVE PROGRESS LOGIC
+    time_pattern = re.compile(r'time=(\d+):(\d+):(\d+).(\d+)')
+    last_percent = -1
+    start_time = time.time()
 
     while True:
         line = process.stdout.readline()
+
         if line == "" and process.poll() is not None:
             break
+
+        match = time_pattern.search(line)
+        if match and total_duration > 0:
+
+            h, m, s, ms = map(int, match.groups())
+            current_time = h * 3600 + m * 60 + s + ms / 100
+
+            percent = int((current_time / total_duration) * 100)
+
+            if percent != last_percent and percent > 0:
+                elapsed = time.time() - start_time
+                eta = elapsed * (100 - percent) / percent if percent else 0
+
+                await processing_msg.edit_text(
+                    f"⚡ Compressing: {percent}%\n"
+                    f"⏳ ETA: {time_formatter(eta)}"
+                )
+
+                last_percent = percent
 
     await processing_msg.delete()
 
@@ -75,35 +119,31 @@ async def compress_video(client: Client, message: Message):
         os.remove(input_path)
         return await message.reply("❌ Compression failed")
 
-    # 📊 SIZE INFO
-    original_size = os.path.getsize(input_path)
-    compressed_size = os.path.getsize(output_path)
+    # 📊 RESULT
+    original = os.path.getsize(input_path)
+    compressed = os.path.getsize(output_path)
+    reduction = 100 - ((compressed / original) * 100)
 
-    reduction = 100 - ((compressed_size / original_size) * 100)
-    reduction_text = f"{reduction:.2f}%"
-
-    # 📄 MEDIAINFO
-    before_info = await info(input_path, message)
-    after_info = await info(output_path, message)
-
-    upload_msg = await message.reply("⬆️ Uploading...")
+    # ⬆️ UPLOAD (LIVE)
+    upload_msg = await message.reply("⬆️ Uploading compressed video...")
     await client.send_chat_action(message.chat.id, ChatAction.UPLOAD_VIDEO)
 
     await message.reply_video(
         video=output_path,
         caption=(
             f"✅ Compression Done\n\n"
-            f"📦 Original: {humanbytes(original_size)}\n"
-            f"📉 Compressed: {humanbytes(compressed_size)}\n"
-            f"📊 Reduced: {reduction_text}\n\n"
-            f"📄 [Before]({before_info}) | [After]({after_info})"
+            f"📦 Original: {humanbytes(original)}\n"
+            f"📉 Compressed: {humanbytes(compressed)}\n"
+            f"📊 Reduced: {reduction:.2f}%\n\n"
+            f"⚡ PixelPulseBot"
         ),
         progress=progress,
-        progress_args=(upload_msg, compressed_size, upload_msg, time.time())
+        progress_args=(upload_msg, compressed, upload_msg, time.time())
     )
 
     await upload_msg.delete()
 
+    # 🧹 CLEANUP
     os.remove(input_path)
     os.remove(output_path)
 
