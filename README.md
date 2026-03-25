@@ -44,7 +44,7 @@ A minimal, high-performance Telegram bot that lets users **enhance** (1080p upsc
 - ✅ **1080p Upscale** – High-quality FFmpeg filters  
 - ✅ **Denoise & Sharpen** – Cleaner and sharper visuals  
 - ✅ **Color Enhancement** – Better contrast & saturation  
-- ✅ **Fast Compression (x265)** – Danish-style encoding ⚡  
+- ✅ **Fast Compression (x265)** – encoding ⚡  
 - ✅ **Live Progress + ETA**  
 - ✅ **Supports Video & Document**  
 - ✅ **Output as File (No Telegram Recompression)**  
